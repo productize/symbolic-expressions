@@ -172,3 +172,13 @@ pub fn parse_file(name: &str) -> Sexp {
     let s = read_file(name).unwrap();
     parse(&s[..])
 }
+
+#[allow(dead_code)]
+fn check_parse(s: &str) {
+    let e = parse_str(s);
+    let t = format!("{}", e);
+    assert_eq!(s, t);
+}
+
+#[test]
+fn test1() { check_parse("()") }
