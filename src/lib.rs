@@ -1,17 +1,21 @@
+// (c) 2015 Joost Yervante Damad <joost@damad.be>
+
+// loosely based on https://github.com/cgaebel/sexp
+
 use std::fmt;
 use std::str::FromStr;
 
 use std::fs::File;
 use std::io::prelude::*;
 
-enum Atom {
+pub enum Atom {
   S(String),
   Q(String),
   I(i64),
   F(f64),
 }
 
-enum Sexp {
+pub enum Sexp {
   Atom(Atom),
   List(Vec<Sexp>),
 }
@@ -160,8 +164,11 @@ fn read_file(name: &str) -> Result<String,std::io::Error> {
     Ok(s)
 }
 
-fn main() {
-    let s = read_file("../data/SILABS_EFM32_QFN24.kicad_mod").unwrap();
-    let res = parse(&s[..]);
-    println!("res: {}", res)
+pub fn parse_str(s: &str) -> Sexp {
+    parse(s)
+}
+
+pub fn parse_file(name: &str) -> Sexp {
+    let s = read_file(name).unwrap();
+    parse(&s[..])
 }
