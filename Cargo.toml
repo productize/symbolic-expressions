@@ -1,0 +1,4 @@
+[package]
+name = "rust_sexp"
+version = "0.1.0"
+authors = ["Joost Damad <joost@damad.be>"]
