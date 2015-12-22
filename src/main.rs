@@ -1,5 +1,8 @@
 use std::fmt;
+use std::str::FromStr;
+
 use std::fs::File;
+use std::io::prelude::*;
 
 enum Atom {
   S(String),
@@ -57,7 +60,7 @@ fn parse_list(vec: &Vec<char>, mut pos: usize) -> (usize, Sexp) {
         }
     }
     println!("Found list");
-    (pos, Sexp::List(l))
+    (pos+1, Sexp::List(l))
 }
 
 fn parse_quoted_string(vec: &Vec<char>, mut pos: usize) -> (usize, Atom) {
@@ -80,8 +83,8 @@ fn parse_string(vec: &Vec<char>, mut pos: usize) -> (usize, Atom) {
     let mut s = String::new();
     loop {
         match vec[pos] {
-            ' ' | ')' => break,
-            '"' => panic!("quote in unquoted string"),
+            ' ' | '\t' | '\r' | '\n' | ')' => break,
+            '"' => panic!("quote in unquoted string {}", s),
             x => s.push(x)
         }
         pos += 1;
@@ -95,7 +98,7 @@ fn parse_number(vec: &Vec<char>, mut pos: usize) -> (usize, Atom) {
     let mut s = String::new();
     loop {
         match vec[pos] {
-            ' ' | ')' => break,
+            ' ' | '\r' | '\n' | '\t' | ')' => break,
             '0' ... '9' | '.' | '-' => s.push(vec[pos]),
             _ => panic!("unexpected char in number"),
         }
@@ -150,10 +153,15 @@ fn parse(data: &str) -> Sexp {
     res
 }
 
-fn main() {
-    let mut f = try!(File::open("data/SILABS_EFM32_QFN24.kicad_mod"));
+fn read_file(name: &str) -> Result<String,std::io::Error> {
+    let mut f = try!(File::open(name));
     let mut s = String::new();
     try!(f.read_to_string(&mut s));
-    let res = parse(s);
+    Ok(s)
+}
+
+fn main() {
+    let s = read_file("../data/SILABS_EFM32_QFN24.kicad_mod").unwrap();
+    let res = parse(&s[..]);
     println!("res: {}", res)
 }
