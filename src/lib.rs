@@ -21,13 +21,6 @@ pub enum Sexp {
   List(Vec<Sexp>),
 }
 
-struct ParseState {
-    pos: usize,
-    line: usize,
-    lpos: usize,
-    vec: Vec<char>,
-}
-
 pub struct Error {
     msg: &'static str,
     line: usize,
@@ -40,6 +33,30 @@ type ERes<T> = Result<T, Err>;
 fn err<T>(msg: &'static str, state: &ParseState) -> ERes<T> {
     Err(Box::new(Error { msg: msg, line: state.line, lpos: state.lpos }))
 }
+
+struct ParseState {
+    pos: usize,
+    line: usize,
+    lpos: usize,
+    vec: Vec<char>,
+    len: usize,
+}
+
+impl ParseState {
+    fn peek(&self) -> ERes<char> {
+        if self.pos >= self.len {
+            return err("end of document reached", self)
+        }
+        Ok(self.vec[self.pos])
+    }
+    fn peek_option(&self) -> Option<char> {
+        if self.pos >= self.len {
+            return None
+        }
+        Some(self.vec[self.pos])
+    }
+}
+
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
@@ -87,7 +104,7 @@ fn parse_list(state: &mut ParseState) -> ERes<Sexp> {
     state.lpos += 1;
     let mut l: Vec<Sexp> = Vec::new();
     loop {
-        match state.vec[state.pos] {
+        match try!(state.peek()) {
             ')' => {
                 state.pos += 1;
                 state.lpos += 1;
@@ -135,10 +152,17 @@ fn parse_string(state: &mut ParseState) -> ERes<Atom> {
     println!("string");
     let mut s = String::new();
     loop {
-        match state.vec[state.pos] {
-            ' ' | '\t' | '\r' | '\n' | ')' => break,
-            '"' => return err("unexpected \" in string", state),
-            x => s.push(x),
+        match state.peek_option() {
+            Some(x) => {
+                match x {
+                    ' ' | '\t' | '\r' | '\n' | ')' => break,
+                    '"' => return err("unexpected \" in string", state),
+                    x => s.push(x),
+                }
+            }
+            None => {
+                break;
+            }
         }
         state.pos += 1;
         state.lpos += 1;
@@ -151,16 +175,23 @@ fn parse_number(state: &mut ParseState) -> ERes<Atom> {
     println!("number");
     let mut s = String::new();
     loop {
-        match state.vec[state.pos] {
-            ' ' | '\r' | '\n' | '\t' | ')' => {
+        match state.peek_option() {
+            Some(x) => {
+                match x {
+                    ' ' | '\r' | '\n' | '\t' | ')' => {
+                        break
+                    },
+                    '0' ... '9' | '.' | '-' => {
+                        s.push(state.vec[state.pos])
+                    },
+                    _ => {
+                        return err("unexpected char in number", state)
+                    },
+                }
+            }
+            None => {
                 break
-            },
-            '0' ... '9' | '.' | '-' => {
-                s.push(state.vec[state.pos])
-            },
-            _ => {
-                return err("unexpected char in number", state)
-            },
+            } 
         }
         state.pos += 1;
         state.lpos += 1;
@@ -221,7 +252,8 @@ fn parse(data: &str) -> ERes<Sexp> {
         Ok(Sexp::Empty)
     } else {
         let vec: Vec<char> = data.chars().collect();
-        let state = &mut ParseState { pos: 0, line: 1, lpos: 0, vec: vec };
+        let len = vec.len();
+        let state = &mut ParseState { pos: 0, line: 1, lpos: 0, vec: vec, len: len };
         parse_sexp(state)
     }
 }
@@ -256,9 +288,15 @@ fn test_empty() { check_parse("") }
 fn test_minimal() { check_parse("()") }
 
 #[test]
-#[should_panic(expected="foo")]
+fn test_string() { check_parse("hello") }
+
+#[test]
+fn test_number() { check_parse("1.3") }
+
+#[test]
+#[should_panic(expected="Parse Error 1:1: end of document reached")]
 fn test_invalid1() { parse_str("("); }
 
 #[test]
-#[should_panic(expected="Parse Error 1:0")]
+#[should_panic(expected="Parse Error 1:0: unmatched )")]
 fn test_invalid2() { parse_str(")"); }
