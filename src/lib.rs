@@ -55,6 +55,29 @@ impl ParseState {
         }
         Some(self.vec[self.pos])
     }
+    fn next(&mut self) -> ERes<()> {
+        if self.pos >= self.len {
+            return err("end of document reached", self)
+        }
+        let c = self.vec[self.pos];
+        self.pos += 1;
+        match c {
+            '\r' | '\n' => {
+                self.lpos = 0;
+                self.line += 1;
+            }
+            _ => {
+                self.lpos += 1;
+            }
+        }
+        Ok(())
+    }
+
+    fn take(&mut self) -> ERes<char> {
+        let c = try!(self.peek());
+        try!(self.next());
+        Ok(c)
+    }
 }
 
 
@@ -100,14 +123,12 @@ impl fmt::Display for Sexp {
 
 fn parse_list(state: &mut ParseState) -> ERes<Sexp> {
     println!("list");
-    state.pos += 1;
-    state.lpos += 1;
+    try!(state.next()); // skip (
     let mut l: Vec<Sexp> = Vec::new();
     loop {
         match try!(state.peek()) {
             ')' => {
-                state.pos += 1;
-                state.lpos += 1;
+                try!(state.next());
                 break;
             }
             _ => {
@@ -121,26 +142,21 @@ fn parse_list(state: &mut ParseState) -> ERes<Sexp> {
 
 fn parse_quoted_string(state: &mut ParseState) -> ERes<Atom> {
     println!("qstring");
-    state.pos += 1;
-    state.lpos += 1;
+    try!(state.next()); // skip "
     let mut s = String::new();
     loop {
-        match state.vec[state.pos] {
+        match try!(state.peek()) {
             '"' => {
-                state.pos += 1;
-                state.lpos += 1;
+                try!(state.next());
                 break
             }
-            '\r' | '\n' => {
-                s.push(state.vec[state.pos]);
-                state.pos += 1;
-                state.lpos = 0;
-                state.line += 1;
+            x @ '\r' | x @ '\n' => {
+                s.push(x);
+                try!(state.next());
                 }
             x => {
                 s.push(x);
-                state.pos += 1;
-                state.lpos += 1;
+                try!(state.next());
             } 
         }
     }
@@ -164,8 +180,7 @@ fn parse_string(state: &mut ParseState) -> ERes<Atom> {
                 break;
             }
         }
-        state.pos += 1;
-        state.lpos += 1;
+        try!(state.next())
     }
     println!("Found string {}", s);
     Ok(Atom::S(s))
@@ -193,8 +208,7 @@ fn parse_number(state: &mut ParseState) -> ERes<Atom> {
                 break
             } 
         }
-        state.pos += 1;
-        state.lpos += 1;
+        try!(state.next())
     }
     println!("Found number {}", s);
     let s2: &str = &s[..];
@@ -207,7 +221,7 @@ fn parse_number(state: &mut ParseState) -> ERes<Atom> {
 
 fn parse_atom(state: &mut ParseState) -> ERes<Sexp> {
     println!("atom");
-    let a = match state.vec[state.pos] {
+    let a = match try!(state.peek()) {
         '"' => {
             try!(parse_quoted_string(state))
         }
@@ -224,18 +238,12 @@ fn parse_atom(state: &mut ParseState) -> ERes<Sexp> {
 
 fn parse_sexp(state: &mut ParseState) -> ERes<Sexp> {
     loop {
-        match state.vec[state.pos] {
+        match try!(state.peek()) {
             '(' => {
                 return parse_list(state)
             }
-            '\n' => {
-                state.pos += 1;
-                state.lpos = 0;
-                state.line += 1;
-            }
-            ' ' | '\t' => {
-                state.pos += 1;
-                state.lpos += 1;
+            ' ' | '\t' | '\r' | '\n' => {
+                try!(state.next());
             }
             ')' => {
                 return err("unmatched )", state)
@@ -289,6 +297,10 @@ fn test_minimal() { check_parse("()") }
 
 #[test]
 fn test_string() { check_parse("hello") }
+
+#[test]
+fn test_qstring() { check_parse("\"hello\"") }
+
 
 #[test]
 fn test_number() { check_parse("1.3") }
