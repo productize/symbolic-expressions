@@ -17,7 +17,36 @@ pub enum Atom {
 
 pub enum Sexp {
   Atom(Atom),
+  Empty,
   List(Vec<Sexp>),
+}
+
+struct ParseState {
+    pos: usize,
+    line: usize,
+    lpos: usize,
+    vec: Vec<char>,
+}
+
+pub struct Error {
+    msg: String,
+    line: usize,
+    lpos: usize,
+}
+
+type Err = Box<Error>;
+type ERes<T> = Result<T, Err>;
+
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+        write!(f, "{}:{}: {}", self.line, self.lpos, self.msg)
+    }
+}
+
+impl fmt::Debug for Error {
+    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+        write!(f, "{}:{}: {}", self.line, self.lpos, self.msg)
+    }
 }
 
 impl fmt::Display for Atom {
@@ -43,118 +72,155 @@ impl fmt::Display for Sexp {
         }
         write!(f, ")")
       },
+      Sexp::Empty => write!(f, ""),
     }
   }
 }
 
-fn parse_list(vec: &Vec<char>, mut pos: usize) -> (usize, Sexp) {
+fn parse_list(state: &mut ParseState) -> ERes<Sexp> {
     println!("list");
-    pos += 1;
+    state.pos += 1;
+    state.lpos += 1;
     let mut l: Vec<Sexp> = Vec::new();
     loop {
-        pos = match vec[pos] {
+        match state.vec[state.pos] {
             ')' => {
+                state.pos += 1;
+                state.lpos += 1;
                 break;
             }
             _ => {
-                let (pos, s) = parse_sexp(vec, pos);
-                l.push(s);
-                pos
+                l.push(try!(parse_sexp(state)));
             }
         }
     }
     println!("Found list");
-    (pos+1, Sexp::List(l))
+    Ok(Sexp::List(l))
 }
 
-fn parse_quoted_string(vec: &Vec<char>, mut pos: usize) -> (usize, Atom) {
+fn parse_quoted_string(state: &mut ParseState) -> ERes<Atom> {
     println!("qstring");
-    pos += 1;
+    state.pos += 1;
+    state.lpos += 1;
     let mut s = String::new();
     loop {
-        match vec[pos] {
-            '"' => break,
-            x => s.push(x)
+        match state.vec[state.pos] {
+            '"' => {
+                state.pos += 1;
+                state.lpos += 1;
+                break
+            }
+            '\r' | '\n' => {
+                s.push(state.vec[state.pos]);
+                state.pos += 1;
+                state.lpos = 0;
+                state.line += 1;
+                }
+            x => {
+                s.push(x);
+                state.pos += 1;
+                state.lpos += 1;
+            } 
         }
-        pos += 1;
     }
     println!("Found quoted string {}", s);
-    (pos+1, Atom::Q(s))
+    Ok(Atom::Q(s))
 }
 
-fn parse_string(vec: &Vec<char>, mut pos: usize) -> (usize, Atom) {
+fn parse_string(state: &mut ParseState) -> ERes<Atom> {
     println!("string");
     let mut s = String::new();
     loop {
-        match vec[pos] {
+        match state.vec[state.pos] {
             ' ' | '\t' | '\r' | '\n' | ')' => break,
             '"' => panic!("quote in unquoted string {}", s),
             x => s.push(x)
         }
-        pos += 1;
+        state.pos += 1;
+        state.lpos += 1;
     }
     println!("Found string {}", s);
-    (pos, Atom::S(s))
+    Ok(Atom::S(s))
 }
 
-fn parse_number(vec: &Vec<char>, mut pos: usize) -> (usize, Atom) {
+fn parse_number(state: &mut ParseState) -> ERes<Atom> {
     println!("number");
     let mut s = String::new();
     loop {
-        match vec[pos] {
-            ' ' | '\r' | '\n' | '\t' | ')' => break,
-            '0' ... '9' | '.' | '-' => s.push(vec[pos]),
-            _ => panic!("unexpected char in number"),
+        match state.vec[state.pos] {
+            ' ' | '\r' | '\n' | '\t' | ')' => {
+                break
+            },
+            '0' ... '9' | '.' | '-' => {
+                s.push(state.vec[state.pos])
+            },
+            _ => {
+                panic!("unexpected char in number")
+            },
         }
-        pos += 1;
+        state.pos += 1;
+        state.lpos += 1;
     }
     println!("Found number {}", s);
     let s2: &str = &s[..];
     if s.contains('.') {
-        (pos, Atom::F(f64::from_str(s2).unwrap()))
+        Ok(Atom::F(f64::from_str(s2).unwrap()))
     } else {
-        (pos, Atom::I(i64::from_str(s2).unwrap()))
+        Ok(Atom::I(i64::from_str(s2).unwrap()))
     }
 }
 
-fn parse_atom(vec: &Vec<char>, pos: usize) -> (usize, Sexp) {
+fn parse_atom(state: &mut ParseState) -> ERes<Sexp> {
     println!("atom");
-    let (pos, a) = match vec[pos] {
+    let a = match state.vec[state.pos] {
         '"' => {
-            parse_quoted_string(vec, pos)
+            try!(parse_quoted_string(state))
         }
         '0' ... '9' | '.' | '-' => {
-            parse_number(vec, pos)
+            try!(parse_number(state))
         }
         _ => {
-            parse_string(vec, pos)
+            try!(parse_string(state))
         }
     };
-    (pos, Sexp::Atom(a))
+    Ok(Sexp::Atom(a))
 }
 
 
-fn parse_sexp(vec: &Vec<char>, pos: usize) -> (usize, Sexp) {
-    let mut pos = pos;
+fn parse_sexp(state: &mut ParseState) -> ERes<Sexp> {
     loop {
-        match vec[pos] {
+        match state.vec[state.pos] {
             '(' => {
-                return parse_list(vec, pos)
+                return parse_list(state)
             }
-            ' ' | '\r' | '\t' | '\n' => {
-                pos += 1;
+            '\n' => {
+                state.pos += 1;
+                state.lpos = 0;
+                state.line += 1;
+            }
+            ' ' | '\t' => {
+                state.pos += 1;
+                state.lpos += 1;
+            }
+            ')' => {
+                panic!("unmatched )")
             }
             _ => {
-                return parse_atom(vec, pos)
+                return parse_atom(state)
             }
         }
     }
 }
 
 fn parse(data: &str) -> Sexp {
-    let vec: Vec<char> = data.chars().collect();
-    let (_, res) = parse_sexp(&vec, 0);
-    res
+    if data.len() == 0 {
+        Sexp::Empty
+    } else {
+        let vec: Vec<char> = data.chars().collect();
+        let state = &mut ParseState { pos: 0, line: 1, lpos: 0, vec: vec };
+        let res = parse_sexp(state).unwrap();
+        res
+    }
 }
 
 fn read_file(name: &str) -> Result<String,std::io::Error> {
@@ -181,4 +247,10 @@ fn check_parse(s: &str) {
 }
 
 #[test]
-fn test1() { check_parse("()") }
+fn test_empty() { check_parse("") }
+#[test]
+fn test_minimal() { check_parse("()") }
+#[test]
+fn test_invalid1() { check_parse("(") }
+#[test]
+fn test_invalid2() { check_parse(")") }
