@@ -29,7 +29,7 @@ struct ParseState {
 }
 
 pub struct Error {
-    msg: String,
+    msg: &'static str,
     line: usize,
     lpos: usize,
 }
@@ -37,15 +37,19 @@ pub struct Error {
 type Err = Box<Error>;
 type ERes<T> = Result<T, Err>;
 
+fn err<T>(msg: &'static str, state: &ParseState) -> ERes<T> {
+    Err(Box::new(Error { msg: msg, line: state.line, lpos: state.lpos }))
+}
+
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        write!(f, "{}:{}: {}", self.line, self.lpos, self.msg)
+        write!(f, "Parse Error {}:{}: {}", self.line, self.lpos, self.msg)
     }
 }
 
 impl fmt::Debug for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        write!(f, "{}:{}: {}", self.line, self.lpos, self.msg)
+        write!(f, "Parse Error {}:{}: {}", self.line, self.lpos, self.msg)
     }
 }
 
@@ -133,8 +137,8 @@ fn parse_string(state: &mut ParseState) -> ERes<Atom> {
     loop {
         match state.vec[state.pos] {
             ' ' | '\t' | '\r' | '\n' | ')' => break,
-            '"' => panic!("quote in unquoted string {}", s),
-            x => s.push(x)
+            '"' => return err("unexpected \" in string", state),
+            x => s.push(x),
         }
         state.pos += 1;
         state.lpos += 1;
@@ -155,7 +159,7 @@ fn parse_number(state: &mut ParseState) -> ERes<Atom> {
                 s.push(state.vec[state.pos])
             },
             _ => {
-                panic!("unexpected char in number")
+                return err("unexpected char in number", state)
             },
         }
         state.pos += 1;
@@ -203,7 +207,7 @@ fn parse_sexp(state: &mut ParseState) -> ERes<Sexp> {
                 state.lpos += 1;
             }
             ')' => {
-                panic!("unmatched )")
+                return err("unmatched )", state)
             }
             _ => {
                 return parse_atom(state)
@@ -212,14 +216,13 @@ fn parse_sexp(state: &mut ParseState) -> ERes<Sexp> {
     }
 }
 
-fn parse(data: &str) -> Sexp {
+fn parse(data: &str) -> ERes<Sexp> {
     if data.len() == 0 {
-        Sexp::Empty
+        Ok(Sexp::Empty)
     } else {
         let vec: Vec<char> = data.chars().collect();
         let state = &mut ParseState { pos: 0, line: 1, lpos: 0, vec: vec };
-        let res = parse_sexp(state).unwrap();
-        res
+        parse_sexp(state)
     }
 }
 
@@ -231,12 +234,12 @@ fn read_file(name: &str) -> Result<String,std::io::Error> {
 }
 
 pub fn parse_str(s: &str) -> Sexp {
-    parse(s)
+    parse(s).unwrap()
 }
 
 pub fn parse_file(name: &str) -> Sexp {
     let s = read_file(name).unwrap();
-    parse(&s[..])
+    parse(&s[..]).unwrap()
 }
 
 #[allow(dead_code)]
@@ -248,9 +251,14 @@ fn check_parse(s: &str) {
 
 #[test]
 fn test_empty() { check_parse("") }
+
 #[test]
 fn test_minimal() { check_parse("()") }
+
 #[test]
-fn test_invalid1() { check_parse("(") }
+#[should_panic(expected="foo")]
+fn test_invalid1() { parse_str("("); }
+
 #[test]
-fn test_invalid2() { check_parse(")") }
+#[should_panic(expected="Parse Error 1:0")]
+fn test_invalid2() { parse_str(")"); }
