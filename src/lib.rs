@@ -122,7 +122,7 @@ impl fmt::Display for Sexp {
 }
 
 fn parse_list(state: &mut ParseState) -> ERes<Sexp> {
-    println!("list");
+    //println!("list");
     try!(state.next()); // skip (
     let mut l: Vec<Sexp> = Vec::new();
     loop {
@@ -136,12 +136,12 @@ fn parse_list(state: &mut ParseState) -> ERes<Sexp> {
             }
         }
     }
-    println!("Found list");
+    //println!("Found list");
     Ok(Sexp::List(l))
 }
 
 fn parse_quoted_string(state: &mut ParseState) -> ERes<Atom> {
-    println!("qstring");
+    //println!("qstring");
     try!(state.next()); // skip "
     let mut s = String::new();
     loop {
@@ -160,12 +160,12 @@ fn parse_quoted_string(state: &mut ParseState) -> ERes<Atom> {
             } 
         }
     }
-    println!("Found quoted string {}", s);
+    //println!("Found quoted string {}", s);
     Ok(Atom::Q(s))
 }
 
 fn parse_string(state: &mut ParseState) -> ERes<Atom> {
-    println!("string");
+    //println!("string");
     let mut s = String::new();
     loop {
         match state.peek_option() {
@@ -182,12 +182,12 @@ fn parse_string(state: &mut ParseState) -> ERes<Atom> {
         }
         try!(state.next())
     }
-    println!("Found string {}", s);
+    //println!("Found string {}", s);
     Ok(Atom::S(s))
 }
 
 fn parse_number(state: &mut ParseState) -> ERes<Atom> {
-    println!("number");
+    //println!("number");
     let mut s = String::new();
     loop {
         match state.peek_option() {
@@ -210,7 +210,7 @@ fn parse_number(state: &mut ParseState) -> ERes<Atom> {
         }
         try!(state.next())
     }
-    println!("Found number {}", s);
+    //println!("Found number {}", s);
     let s2: &str = &s[..];
     if s.contains('.') {
         Ok(Atom::F(f64::from_str(s2).unwrap()))
@@ -220,7 +220,7 @@ fn parse_number(state: &mut ParseState) -> ERes<Atom> {
 }
 
 fn parse_atom(state: &mut ParseState) -> ERes<Sexp> {
-    println!("atom");
+    //println!("atom");
     let a = match try!(state.peek()) {
         '"' => {
             try!(parse_quoted_string(state))
@@ -312,3 +312,7 @@ fn test_invalid1() { parse_str("("); }
 #[test]
 #[should_panic(expected="Parse Error 1:0: unmatched )")]
 fn test_invalid2() { parse_str(")"); }
+
+#[test]
+#[should_panic(expected="Parse Error 1:6: end of document reached")]
+fn test_invalid3() { parse_str("\"hello"); }
