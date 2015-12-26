@@ -5,6 +5,7 @@
 
 use std::fmt;
 use std::str::FromStr;
+use std::f64;
 
 use std::fs::File;
 use std::io::prelude::*;
@@ -97,10 +98,17 @@ impl fmt::Debug for Error {
 impl fmt::Display for Atom {
   fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
     match *self {
-      Atom::S(ref s) => write!(f, "{}", s),
-      Atom::Q(ref s) => write!(f, "\"{}\"", s),
-      Atom::I(i)     => write!(f, "{}", i),
-      Atom::F(d)     => write!(f, "{}", d),
+        Atom::S(ref s) => write!(f, "{}", s),
+        Atom::Q(ref s) => write!(f, "\"{}\"", s),
+        Atom::I(i)     => write!(f, "{}", i),
+        Atom::F(d)     => {
+            let z = d.floor();
+            if d - z < f64::EPSILON {
+                write!(f, "{}.0", z)
+            } else {
+                write!(f, "{}", d)
+            }
+        }    
     }
   }
 }
@@ -310,6 +318,9 @@ mod tests {
 
     #[test]
     fn test_number() { check_parse("1.3") }
+    
+    #[test]
+    fn test_float_vs_int() { check_parse("2.0") }
 
     #[test]
     fn test_double() { check_parse("(())") }
@@ -342,5 +353,5 @@ mod tests {
     fn test_invalid3() { parse_str("\"hello"); }
 
     #[test]
-    fn test_complex() { parse_str("(module SWITCH_3W_SIDE_MMP221-R (layer F.Cu) (descr \"\") (pad 1 thru_hole rect (size 1.2 1.2) (at -2.5 -1.6 0) (layers *.Cu *.Mask) (drill 0.8)) (pad 2 thru_hole rect (size 1.2 1.2) (at 0.0 -1.6 0) (layers *.Cu *.Mask) (drill 0.8)) (pad 3 thru_hole rect (size 1.2 1.2) (at 2.5 -1.6 0) (layers *.Cu *.Mask) (drill 0.8)) (pad 5 thru_hole rect (size 1.2 1.2) (at 0.0 1.6 0) (layers *.Cu *.Mask) (drill 0.8)) (pad 6 thru_hole rect (size 1.2 1.2) (at -2.5 1.6 0) (layers *.Cu *.Mask) (drill 0.8)) (pad 4 thru_hole rect (size 1.2 1.2) (at 2.5 1.6 0) (layers *.Cu *.Mask) (drill 0.8)) (fp_line (start -4.5 -1.75) (end 4.5 -1.75) (layer F.SilkS) (width 0.127)) (fp_line (start 4.5 -1.75) (end 4.5 1.75) (layer F.SilkS) (width 0.127)) (fp_line (start 4.5 1.75) (end -4.5 1.75) (layer F.SilkS) (width 0.127)) (fp_line (start -4.5 1.75) (end -4.5 -1.75) (layer F.SilkS) (width 0.127)))") }
+    fn test_complex() { check_parse("(module SWITCH_3W_SIDE_MMP221-R (layer F.Cu) (descr \"\") (pad 1 thru_hole rect (size 1.2 1.2) (at -2.5 -1.6 0) (layers *.Cu *.Mask) (drill 0.8)) (pad 2 thru_hole rect (size 1.2 1.2) (at 0.0 -1.6 0) (layers *.Cu *.Mask) (drill 0.8)) (pad 3 thru_hole rect (size 1.2 1.2) (at 2.5 -1.6 0) (layers *.Cu *.Mask) (drill 0.8)) (pad 5 thru_hole rect (size 1.2 1.2) (at 0.0 1.6 0) (layers *.Cu *.Mask) (drill 0.8)) (pad 6 thru_hole rect (size 1.2 1.2) (at -2.5 1.6 0) (layers *.Cu *.Mask) (drill 0.8)) (pad 4 thru_hole rect (size 1.2 1.2) (at 2.5 1.6 0) (layers *.Cu *.Mask) (drill 0.8)) (fp_line (start -4.5 -1.75) (end 4.5 -1.75) (layer F.SilkS) (width 0.127)) (fp_line (start 4.5 -1.75) (end 4.5 1.75) (layer F.SilkS) (width 0.127)) (fp_line (start 4.5 1.75) (end -4.5 1.75) (layer F.SilkS) (width 0.127)) (fp_line (start -4.5 1.75) (end -4.5 -1.75) (layer F.SilkS) (width 0.127)))") }
 }
