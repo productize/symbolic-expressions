@@ -1,6 +1,7 @@
 // (c) 2015 Joost Yervante Damad <joost@damad.be>
 
 // loosely based on https://github.com/cgaebel/sexp
+// latest version can be found at https://github.com/andete/rust_sexp
 
 use std::fmt;
 use std::str::FromStr;
@@ -282,37 +283,43 @@ pub fn parse_file(name: &str) -> Sexp {
     parse(&s[..]).unwrap()
 }
 
-#[allow(dead_code)]
-fn check_parse(s: &str) {
-    let e = parse_str(s);
-    let t = format!("{}", e);
-    assert_eq!(s, t);
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[allow(dead_code)]
+    fn check_parse(s: &str) {
+        let e = parse_str(s);
+        let t = format!("{}", e);
+        assert_eq!(s, t);
+    }
+
+
+
+    #[test]
+    fn test_empty() { check_parse("") }
+
+    #[test]
+    fn test_minimal() { check_parse("()") }
+
+    #[test]
+    fn test_string() { check_parse("hello") }
+
+    #[test]
+    fn test_qstring() { check_parse("\"hello\"") }
+
+    #[test]
+    fn test_number() { check_parse("1.3") }
+
+    #[test]
+    #[should_panic(expected="Parse Error 1:1: end of document reached")]
+    fn test_invalid1() { parse_str("("); }
+
+    #[test]
+    #[should_panic(expected="Parse Error 1:0: unmatched )")]
+    fn test_invalid2() { parse_str(")"); }
+
+    #[test]
+    #[should_panic(expected="Parse Error 1:6: end of document reached")]
+    fn test_invalid3() { parse_str("\"hello"); }
 }
-
-#[test]
-fn test_empty() { check_parse("") }
-
-#[test]
-fn test_minimal() { check_parse("()") }
-
-#[test]
-fn test_string() { check_parse("hello") }
-
-#[test]
-fn test_qstring() { check_parse("\"hello\"") }
-
-
-#[test]
-fn test_number() { check_parse("1.3") }
-
-#[test]
-#[should_panic(expected="Parse Error 1:1: end of document reached")]
-fn test_invalid1() { parse_str("("); }
-
-#[test]
-#[should_panic(expected="Parse Error 1:0: unmatched )")]
-fn test_invalid2() { parse_str(")"); }
-
-#[test]
-#[should_panic(expected="Parse Error 1:6: end of document reached")]
-fn test_invalid3() { parse_str("\"hello"); }
