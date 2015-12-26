@@ -327,6 +327,9 @@ mod tests {
     fn test_br_float() { check_parse("(12.7)") }
     
     #[test]
+    fn test_br_qbrstring() { check_parse("(\"(()\")") }
+    
+    #[test]
     #[should_panic(expected="Parse Error 1:1: end of document reached")]
     fn test_invalid1() { parse_str("("); }
 
