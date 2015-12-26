@@ -312,6 +312,21 @@ mod tests {
     fn test_number() { check_parse("1.3") }
 
     #[test]
+    fn test_double() { check_parse("(())") }
+
+    #[test]
+    fn test_br_string() { check_parse("(world)") }
+
+    #[test]
+    fn test_br_qstring() { check_parse("(\"world\")") }
+
+    #[test]
+    fn test_br_int() { check_parse("(42)") }
+
+    #[test]
+    fn test_br_float() { check_parse("(12.7)") }
+    
+    #[test]
     #[should_panic(expected="Parse Error 1:1: end of document reached")]
     fn test_invalid1() { parse_str("("); }
 
