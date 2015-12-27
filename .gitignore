@@ -12,3 +12,6 @@
 
 # emacs backups
 *~
+
+# for libraries, ignore Cargo.lock
+Cargo.lock
