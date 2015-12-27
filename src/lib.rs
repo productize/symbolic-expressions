@@ -23,17 +23,25 @@ pub enum Sexp {
   List(Vec<Sexp>),
 }
 
-pub struct Error {
+pub struct ParseError {
     msg: &'static str,
     line: usize,
     lpos: usize,
 }
 
-type Err = Box<Error>;
-type ERes<T> = Result<T, Err>;
+pub enum Error {
+    ParseError(ParseError),
+    IOError(std::io::Error),
+}
 
-fn err<T>(msg: &'static str, state: &ParseState) -> ERes<T> {
-    Err(Box::new(Error { msg: msg, line: state.line, lpos: state.lpos }))
+pub type ERes<T> = Result<T, Error>;
+
+fn err_parse<T>(msg: &'static str, state: &ParseState) -> ERes<T> {
+    Err(Error::ParseError(ParseError { msg: msg, line: state.line, lpos: state.lpos}))
+}
+
+fn err_io<T>(err: std::io::Error) -> ERes<T> {
+    Err(Error::IOError(err))
 }
 
 struct ParseState {
@@ -47,7 +55,7 @@ struct ParseState {
 impl ParseState {
     fn peek(&self) -> ERes<char> {
         if self.pos >= self.len {
-            return err("end of document reached", self)
+            return err_parse("end of document reached", self)
         }
         Ok(self.vec[self.pos])
     }
@@ -59,7 +67,7 @@ impl ParseState {
     }
     fn next(&mut self) -> ERes<()> {
         if self.pos >= self.len {
-            return err("end of document reached", self)
+            return err_parse("end of document reached", self)
         }
         let c = self.vec[self.pos];
         self.pos += 1;
@@ -74,24 +82,28 @@ impl ParseState {
         }
         Ok(())
     }
-
-    fn take(&mut self) -> ERes<char> {
-        let c = try!(self.peek());
-        try!(self.next());
-        Ok(c)
-    }
 }
 
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        write!(f, "Parse Error {}:{}: {}", self.line, self.lpos, self.msg)
+        match *self {
+            Error::ParseError(ref p) =>
+                write!(f, "Parse Error {}:{}: {}", p.line, p.lpos, p.msg),
+            Error::IOError(ref i) =>
+                write!(f, "{}", i)
+        }
     }
 }
 
 impl fmt::Debug for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        write!(f, "Parse Error {}:{}: {}", self.line, self.lpos, self.msg)
+        match *self {
+            Error::ParseError(ref p) =>
+                write!(f, "Parse Error {}:{}: {}", p.line, p.lpos, p.msg),
+            Error::IOError(ref i) =>
+                write!(f, "{}", i)
+        }
     }
 }
 
@@ -181,7 +193,7 @@ fn parse_string(state: &mut ParseState) -> ERes<Atom> {
             Some(x) => {
                 match x {
                     ' ' | '\t' | '\r' | '\n' | ')' => break,
-                    '"' => return err("unexpected \" in string", state),
+                    '"' => return err_parse("unexpected \" in string", state),
                     x => s.push(x),
                 }
             }
@@ -209,7 +221,7 @@ fn parse_number(state: &mut ParseState) -> ERes<Atom> {
                         s.push(state.vec[state.pos])
                     },
                     _ => {
-                        return err("unexpected char in number", state)
+                        return err_parse("unexpected char in number", state)
                     },
                 }
             }
@@ -255,7 +267,7 @@ fn parse_sexp(state: &mut ParseState) -> ERes<Sexp> {
                 try!(state.next());
             }
             ')' => {
-                return err("unmatched )", state)
+                return err_parse("unmatched )", state)
             }
             _ => {
                 return parse_atom(state)
@@ -275,20 +287,23 @@ fn parse(data: &str) -> ERes<Sexp> {
     }
 }
 
-fn read_file(name: &str) -> Result<String,std::io::Error> {
+fn read_file(name: &str) -> Result<String, std::io::Error> {
     let mut f = try!(File::open(name));
     let mut s = String::new();
     try!(f.read_to_string(&mut s));
     Ok(s)
 }
 
-pub fn parse_str(s: &str) -> Sexp {
-    parse(s).unwrap()
+pub fn parse_str(s: &str) -> ERes<Sexp> {
+    parse(s)
 }
 
-pub fn parse_file(name: &str) -> Sexp {
-    let s = read_file(name).unwrap();
-    parse(&s[..]).unwrap()
+pub fn parse_file(name: &str) -> ERes<Sexp> {
+    let s = try!(match read_file(name) {
+        Ok(s) => Ok(s),
+        Err(x) => err_io(x),
+    });
+    parse(&s[..])
 }
 
 #[cfg(test)]
@@ -297,12 +312,16 @@ mod tests {
 
     #[allow(dead_code)]
     fn check_parse(s: &str) {
-        let e = parse_str(s);
+        let e = parse_str(s).unwrap();
         let t = format!("{}", e);
         assert_eq!(s, t);
     }
 
-
+    #[allow(dead_code)]
+    fn parse_fail(s: &str) {
+        parse_str(s).unwrap();
+    }
+    
 
     #[test]
     fn test_empty() { check_parse("") }
@@ -342,15 +361,15 @@ mod tests {
     
     #[test]
     #[should_panic(expected="Parse Error 1:1: end of document reached")]
-    fn test_invalid1() { parse_str("("); }
+    fn test_invalid1() { parse_fail("(") }
 
     #[test]
     #[should_panic(expected="Parse Error 1:0: unmatched )")]
-    fn test_invalid2() { parse_str(")"); }
+    fn test_invalid2() { parse_fail(")") }
 
     #[test]
     #[should_panic(expected="Parse Error 1:6: end of document reached")]
-    fn test_invalid3() { parse_str("\"hello"); }
+    fn test_invalid3() { parse_fail("\"hello") }
 
     #[test]
     fn test_complex() { check_parse("(module SWITCH_3W_SIDE_MMP221-R (layer F.Cu) (descr \"\") (pad 1 thru_hole rect (size 1.2 1.2) (at -2.5 -1.6 0) (layers *.Cu *.Mask) (drill 0.8)) (pad 2 thru_hole rect (size 1.2 1.2) (at 0.0 -1.6 0) (layers *.Cu *.Mask) (drill 0.8)) (pad 3 thru_hole rect (size 1.2 1.2) (at 2.5 -1.6 0) (layers *.Cu *.Mask) (drill 0.8)) (pad 5 thru_hole rect (size 1.2 1.2) (at 0.0 1.6 0) (layers *.Cu *.Mask) (drill 0.8)) (pad 6 thru_hole rect (size 1.2 1.2) (at -2.5 1.6 0) (layers *.Cu *.Mask) (drill 0.8)) (pad 4 thru_hole rect (size 1.2 1.2) (at 2.5 1.6 0) (layers *.Cu *.Mask) (drill 0.8)) (fp_line (start -4.5 -1.75) (end 4.5 -1.75) (layer F.SilkS) (width 0.127)) (fp_line (start 4.5 -1.75) (end 4.5 1.75) (layer F.SilkS) (width 0.127)) (fp_line (start 4.5 1.75) (end -4.5 1.75) (layer F.SilkS) (width 0.127)) (fp_line (start -4.5 1.75) (end -4.5 -1.75) (layer F.SilkS) (width 0.127)))") }
