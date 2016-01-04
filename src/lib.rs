@@ -39,6 +39,21 @@ pub enum Sexp {
   List(Vec<Sexp>),
 }
 
+impl Sexp {
+    pub fn atom(&self) -> Result<&Atom,String> {
+        match *self {
+            Sexp::Atom(ref f) => Ok(f),
+            _ => Err(String::from("not an atom"))
+        }
+    }
+    pub fn list(&self) -> Result<&Vec<Sexp>,String> {
+        match *self {
+            Sexp::List(ref v) => Ok(v),
+            _ => Err(String::from("not a list"))
+        }
+    }
+}
+
 pub struct ParseError {
     msg: &'static str,
     line: usize,
