@@ -30,6 +30,14 @@ impl Atom {
             _ => Err(String::from("not an int"))
         }
     }
+    pub fn string(&self) -> Result<String,String> {
+        match *self {
+            Atom::S(ref s) => Ok(s.clone()),
+            Atom::Q(ref s) => Ok(s.clone()),
+            _ => Err(String::from("not a string"))
+        }
+    }
+    
 }
 
 
