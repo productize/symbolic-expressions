@@ -17,6 +17,22 @@ pub enum Atom {
   F(f64),
 }
 
+impl Atom {
+    pub fn f(&self) -> Result<f64,String> {
+        match *self {
+            Atom::F(f) => Ok(f),
+            _ => Err(String::from("not a float"))
+        }
+    }
+    pub fn i(&self) -> Result<i64,String> {
+        match *self {
+            Atom::I(i) => Ok(i),
+            _ => Err(String::from("not an int"))
+        }
+    }
+}
+
+
 pub enum Sexp {
   Atom(Atom),
   Empty,
