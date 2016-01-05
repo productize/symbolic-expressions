@@ -37,7 +37,14 @@ impl Atom {
             ref x => Err(format!("not a string: {}", x))
         }
     }
-    
+    pub fn as_string(&self) -> Result<String,String> {
+        match *self {
+            Atom::S(ref s) => Ok(s.clone()),
+            Atom::Q(ref s) => Ok(s.clone()),
+            Atom::F(ref s) => Ok(format!("{}", s)),
+            Atom::I(ref s) => Ok(format!("{}", s)),
+        }
+    }
 }
 
 
