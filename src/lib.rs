@@ -21,6 +21,7 @@ impl Atom {
     pub fn f(&self) -> Result<f64,String> {
         match *self {
             Atom::F(f) => Ok(f),
+            Atom::I(i) => Ok(i as f64),
             ref x => Err(format!("not a float: {}", x))
         }
     }
