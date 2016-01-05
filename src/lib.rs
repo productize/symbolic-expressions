@@ -21,20 +21,20 @@ impl Atom {
     pub fn f(&self) -> Result<f64,String> {
         match *self {
             Atom::F(f) => Ok(f),
-            _ => Err(String::from("not a float"))
+            ref x => Err(format!("not a float: {}", x))
         }
     }
     pub fn i(&self) -> Result<i64,String> {
         match *self {
             Atom::I(i) => Ok(i),
-            _ => Err(String::from("not an int"))
+            ref x => Err(format!("not an int: {}", x))
         }
     }
     pub fn string(&self) -> Result<String,String> {
         match *self {
             Atom::S(ref s) => Ok(s.clone()),
             Atom::Q(ref s) => Ok(s.clone()),
-            _ => Err(String::from("not a string"))
+            ref x => Err(format!("not a string: {}", x))
         }
     }
     
@@ -51,13 +51,13 @@ impl Sexp {
     pub fn atom(&self) -> Result<&Atom,String> {
         match *self {
             Sexp::Atom(ref f) => Ok(f),
-            _ => Err(String::from("not an atom"))
+            ref x => Err(format!("not an atom: {}", x))
         }
     }
     pub fn list(&self) -> Result<&Vec<Sexp>,String> {
         match *self {
             Sexp::List(ref v) => Ok(v),
-            _ => Err(String::from("not a list"))
+            ref x => Err(format!("not a list: {}", x))
         }
     }
 }
