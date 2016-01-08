@@ -1,4 +1,4 @@
 [package]
-name = "rustysexp"
+name = "rustys-exp"
 version = "0.1.0"
-authors = ["Joost Damad <joost@damad.be>"]
+authors = ["Joost Damad <joost@productize.be>"]
