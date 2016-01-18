@@ -1,4 +1,4 @@
-// (c) 2015 Joost Yervante Damad <joost@damad.be>
+// (c) 2015 Joost Yervante Damad <joost@productize.be>
 
 // loosely based on https://github.com/cgaebel/sexp
 // latest version can be found at https://github.com/andete/rust_sexp
