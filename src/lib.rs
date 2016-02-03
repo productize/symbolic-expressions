@@ -79,7 +79,7 @@ impl Sexp {
         if st != s {
             return Err(format!("list doesn't start with {}", s))
         };
-        Ok(v2)
+        Ok(&v[1..])
     }
 }
 
