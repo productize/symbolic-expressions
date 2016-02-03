@@ -97,6 +97,9 @@ struct ParseState {
     lpos: usize,
     vec: Vec<char>,
     len: usize,
+    store_pos: usize,
+    store_line: usize,
+    store_lpos: usize,
 }
 
 impl ParseState {
@@ -128,6 +131,19 @@ impl ParseState {
             }
         }
         Ok(())
+    }
+
+    fn store_pos(&mut self) {
+        self.store_pos = self.pos;
+        self.store_line = self.line;
+        self.store_lpos = self.lpos;
+           
+    }
+
+    fn restore_pos(&mut self) {
+        self.pos = self.store_pos;
+        self.line = self.store_line;
+        self.lpos = self.store_lpos;
     }
 }
 
@@ -192,6 +208,7 @@ impl fmt::Display for Sexp {
 fn parse_list(state: &mut ParseState) -> ERes<Sexp> {
     //println!("list");
     try!(state.next()); // skip (
+    let mut first = true;
     let mut l: Vec<Sexp> = Vec::new();
     loop {
         match try!(state.peek()) {
@@ -199,13 +216,22 @@ fn parse_list(state: &mut ParseState) -> ERes<Sexp> {
                 try!(state.next());
                 break;
             }
+            ' ' | '\t' | '\r' | '\n' => {
+                try!(state.next());
+            }
             _ => {
-                l.push(try!(parse_sexp(state)));
+                let res = try!(parse_sexp(state));
+                if first {
+                    println!("List: {}", &res);
+                    first = false;
+                }
+                l.push(res)
             }
         }
     }
-    //println!("Found list");
-    Ok(Sexp::List(l))
+    let l = Sexp::List(l);
+    println!("Found list {}", &l);
+    Ok(l)
 }
 
 fn parse_quoted_string(state: &mut ParseState) -> ERes<Atom> {
@@ -268,7 +294,7 @@ fn parse_number(state: &mut ParseState) -> ERes<Atom> {
                         s.push(state.vec[state.pos])
                     },
                     _ => {
-                        return err_parse("unexpected char in number", state)
+                        return err_parse("unexpected char in number", &state)
                     },
                 }
             }
@@ -292,9 +318,18 @@ fn parse_atom(state: &mut ParseState) -> ERes<Sexp> {
     let a = match try!(state.peek()) {
         '"' => {
             try!(parse_quoted_string(state))
-        }
+        },
         '0' ... '9' | '.' | '-' => {
-            try!(parse_number(state))
+            state.store_pos();
+            match parse_number(state) {
+                Ok(a) => {
+                    a
+                },
+                Err(_) => {
+                    state.restore_pos();
+                    try!(parse_string(state))
+                },
+            }
         }
         _ => {
             try!(parse_string(state))
@@ -329,7 +364,7 @@ fn parse(data: &str) -> ERes<Sexp> {
     } else {
         let vec: Vec<char> = data.chars().collect();
         let len = vec.len();
-        let state = &mut ParseState { pos: 0, line: 1, lpos: 0, vec: vec, len: len };
+        let state = &mut ParseState { pos: 0, line: 1, lpos: 0, vec: vec, len: len, store_pos: 0, store_lpos: 0, store_line: 0, };
         parse_sexp(state)
     }
 }
@@ -420,4 +455,11 @@ mod tests {
 
     #[test]
     fn test_complex() { check_parse("(module SWITCH_3W_SIDE_MMP221-R (layer F.Cu) (descr \"\") (pad 1 thru_hole rect (size 1.2 1.2) (at -2.5 -1.6 0) (layers *.Cu *.Mask) (drill 0.8)) (pad 2 thru_hole rect (size 1.2 1.2) (at 0.0 -1.6 0) (layers *.Cu *.Mask) (drill 0.8)) (pad 3 thru_hole rect (size 1.2 1.2) (at 2.5 -1.6 0) (layers *.Cu *.Mask) (drill 0.8)) (pad 5 thru_hole rect (size 1.2 1.2) (at 0.0 1.6 0) (layers *.Cu *.Mask) (drill 0.8)) (pad 6 thru_hole rect (size 1.2 1.2) (at -2.5 1.6 0) (layers *.Cu *.Mask) (drill 0.8)) (pad 4 thru_hole rect (size 1.2 1.2) (at 2.5 1.6 0) (layers *.Cu *.Mask) (drill 0.8)) (fp_line (start -4.5 -1.75) (end 4.5 -1.75) (layer F.SilkS) (width 0.127)) (fp_line (start 4.5 -1.75) (end 4.5 1.75) (layer F.SilkS) (width 0.127)) (fp_line (start 4.5 1.75) (end -4.5 1.75) (layer F.SilkS) (width 0.127)) (fp_line (start -4.5 1.75) (end -4.5 -1.75) (layer F.SilkS) (width 0.127)))") }
+
+    #[test]
+    fn test_temp() {
+        let s = parse_file("/tmp/usbser.kicad_pcb").unwrap();
+        println!("{}", s);
+    }
 }
+
