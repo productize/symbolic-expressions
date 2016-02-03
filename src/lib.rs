@@ -69,6 +69,15 @@ impl Sexp {
         }
     }
 
+    pub fn list_name(&self) -> Result<String, String> {
+        let l = try!(self.list());
+        let l = &l[..];
+        let a = try!(l[0].atom());
+        let s = try!(a.string());
+        Ok(s)
+    }
+    
+
     pub fn slice_atom(&self, s:&str) -> Result<&[Sexp],String> {
         let v = match *self {
             Sexp::List(ref v) => v,
