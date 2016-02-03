@@ -69,7 +69,7 @@ impl Sexp {
         }
     }
 
-    pub fn list_atom(&self, s:&str) -> Result<&Vec<Sexp>,String> {
+    pub fn slice_atom(&self, s:&str) -> Result<&[Sexp],String> {
         let v = match *self {
             Sexp::List(ref v) => v,
             ref x => return Err(format!("not a list: {}", x))
@@ -79,7 +79,7 @@ impl Sexp {
         if st != s {
             return Err(format!("list doesn't start with {}", s))
         };
-        Ok(v)
+        Ok(v2)
     }
 }
 
