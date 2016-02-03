@@ -442,6 +442,9 @@ mod tests {
     fn test_br_qbrstring() { check_parse("(\"(()\")") }
     
     #[test]
+    fn test_number_string() { check_parse("567A_WZ") }
+    
+    #[test]
     #[should_panic(expected="Parse Error 1:1: end of document reached")]
     fn test_invalid1() { parse_fail("(") }
 
