@@ -68,6 +68,19 @@ impl Sexp {
             ref x => Err(format!("not a list: {}", x))
         }
     }
+
+    pub fn list_atom(&self, s:&str) -> Result<&Vec<Sexp>,String> {
+        let v = match *self {
+            Sexp::List(ref v) => v,
+            ref x => return Err(format!("not a list: {}", x))
+        };
+        let v2 =&v[..];
+        let st = try!(try!(v2[0].atom()).string());
+        if st != s {
+            return Err(format!("list doesn't start with {}", s))
+        };
+        Ok(v)
+    }
 }
 
 pub struct ParseError {
