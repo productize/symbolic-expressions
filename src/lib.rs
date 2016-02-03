@@ -222,7 +222,7 @@ fn parse_list(state: &mut ParseState) -> ERes<Sexp> {
             _ => {
                 let res = try!(parse_sexp(state));
                 if first {
-                    println!("List: {}", &res);
+                    //println!("List: {}", &res);
                     first = false;
                 }
                 l.push(res)
@@ -230,7 +230,7 @@ fn parse_list(state: &mut ParseState) -> ERes<Sexp> {
         }
     }
     let l = Sexp::List(l);
-    println!("Found list {}", &l);
+    //println!("Found list {}", &l);
     Ok(l)
 }
 
