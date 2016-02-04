@@ -10,6 +10,7 @@ use std::f64;
 use std::fs::File;
 use std::io::prelude::*;
 
+#[derive(Clone)]
 pub enum Atom {
   S(String),
   Q(String),
@@ -49,6 +50,7 @@ impl Atom {
 }
 
 
+#[derive(Clone)]
 pub enum Sexp {
   Atom(Atom),
   Empty,
