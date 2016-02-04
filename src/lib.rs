@@ -88,7 +88,7 @@ impl Sexp {
         let v2 =&v[..];
         let st = try!(try!(v2[0].atom()).string());
         if st != s {
-            return Err(format!("list doesn't start with {}", s))
+            return Err(format!("list doesn't start with {}, but with {}", s, st))
         };
         Ok(&v[1..])
     }
