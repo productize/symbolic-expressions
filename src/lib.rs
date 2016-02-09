@@ -74,11 +74,9 @@ impl Sexp {
     pub fn list_name(&self) -> Result<String, String> {
         let l = try!(self.list());
         let l = &l[..];
-        let a = try!(l[0].atom());
-        let s = try!(a.string());
-        Ok(s)
+        let a = try!(l[0].string());
+        Ok(a)
     }
-    
 
     pub fn slice_atom(&self, s:&str) -> Result<&[Sexp],String> {
         let v = match *self {
@@ -91,6 +89,25 @@ impl Sexp {
             return Err(format!("list doesn't start with {}, but with {}", s, st))
         };
         Ok(&v[1..])
+    }
+
+    pub fn f(&self) -> Result<f64,String> {
+        let a = try!(self.atom());
+        a.f()
+    }
+    
+    pub fn i(&self) -> Result<i64,String> {
+        let a = try!(self.atom());
+        a.i()
+    }
+    pub fn string(&self) -> Result<String,String> {
+        let a = try!(self.atom());
+        a.string()
+    }
+    
+    pub fn as_string(&self) -> Result<String,String> {
+        let a = try!(self.atom());
+        a.as_string()
     }
 }
 
