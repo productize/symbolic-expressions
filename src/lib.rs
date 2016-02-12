@@ -151,7 +151,8 @@ named!(parse_list<Vec<Sexp> >,
 named!(parse_sexp<Sexp>,
        chain!(
            opt!(nom::multispace) ~
-           s: alt!(map!(parse_list,Sexp::List) | map!(parse_string,Sexp::String))
+               s: alt!(map!(parse_list,Sexp::List) | map!(parse_string,Sexp::String)) ~
+               opt!(nom::multispace)
                ,|| s)
        );
 
