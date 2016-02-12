@@ -1,8 +1,6 @@
 #[macro_use]
 extern crate nom;
 
-use nom::{IResult, multispace};
-
 use std::str;
 use std::str::FromStr;
 use std::fmt;
@@ -95,9 +93,15 @@ pub fn parse_str(sexp: &str) -> Result<Sexp, String> {
         return Ok(Sexp::Empty)
     }
     match parse_sexp(&sexp.as_bytes()[..]) {
-        IResult::Done(_, c) => Ok(c),
-        IResult::Error(x) => Err(format!("parse error: {:?}", x)),
-        IResult::Incomplete(x) => Err(format!("incomplete: {:?}", x)),
+        nom::IResult::Done(_, c) => Ok(c),
+        nom::IResult::Error(err) => {
+            match err {
+                nom::Err::Position(kind,p) => 
+                    Err(format!("parse error: {:?} |{}|", kind, str::from_utf8(p).unwrap())),
+                _ => Err(format!("parse error"))
+            }
+        },
+        nom::IResult::Incomplete(x) => Err(format!("incomplete: {:?}", x)),
     }
 }
 
@@ -146,7 +150,7 @@ named!(parse_list<Vec<Sexp> >,
 
 named!(parse_sexp<Sexp>,
        chain!(
-           opt!(multispace) ~
+           opt!(nom::multispace) ~
            s: alt!(map!(parse_list,Sexp::List) | map!(parse_string,Sexp::String))
                ,|| s)
        );
@@ -155,18 +159,18 @@ named!(parse_sexp<Sexp>,
 // internal tests
 #[test]
 fn test_qstring1() {
-    assert_eq!(parse_string(&b"\"hello world\""[..]), IResult::Done(&b""[..], String::from("hello world")));
+    assert_eq!(parse_string(&b"\"hello world\""[..]), nom::IResult::Done(&b""[..], String::from("hello world")));
 }
 
 #[test]
 #[should_panic(expected="assertion failed: `(left == right)` (left: `Incomplete(Size(1))`, right: `Done([], \"hello\")`)")]
 fn test_qstring2() {
-    assert_eq!(parse_string(&b"\"hello"[..]), IResult::Done(&b""[..], String::from("hello")));
+    assert_eq!(parse_string(&b"\"hello"[..]), nom::IResult::Done(&b""[..], String::from("hello")));
 }
 
 #[test]
 fn test_string1() {
-    assert_eq!(parse_string(&b"hello world"[..]), IResult::Done(&b" world"[..], String::from("hello")));
+    assert_eq!(parse_string(&b"hello world"[..]), nom::IResult::Done(&b" world"[..], String::from("hello")));
 }
 
 #[cfg(test)]
@@ -242,7 +246,7 @@ mod tests {
     fn test_invalid1() { parse_fail("(") }
 
     #[test]
-    #[should_panic(expected="called `Result::unwrap()` on an `Err` value: \"parse error: Position(Alt, [41])\"")]
+    #[should_panic(expected="called `Result::unwrap()` on an `Err` value: \"parse error: Alt |)|\"")]
     fn test_invalid2() { parse_fail(")") }
 
     #[test]
