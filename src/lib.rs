@@ -96,7 +96,8 @@ pub fn parse_str(sexp: &str) -> Result<Sexp, String> {
     }
     match parse_sexp(&sexp.as_bytes()[..]) {
         IResult::Done(_, c) => Ok(c),
-        x          => Err(format!("parse error: {:?}", x))
+        IResult::Error(x) => Err(format!("parse error: {:?}", x)),
+        IResult::Incomplete(x) => Err(format!("incomplete: {:?}", x)),
     }
 }
 
@@ -237,15 +238,15 @@ mod tests {
     fn test_number_string() { check_parse("567A_WZ") }
     
     #[test]
-    #[should_panic(expected="called `Result::unwrap()` on an `Err` value: \"parse error: Incomplete(Size(2))\"")]
+    #[should_panic(expected="called `Result::unwrap()` on an `Err` value: \"incomplete: Size(2)\"")]
     fn test_invalid1() { parse_fail("(") }
 
     #[test]
-    #[should_panic(expected="called `Result::unwrap()` on an `Err` value: \"parse error: Error(Position(Alt, [41]))\"")]
+    #[should_panic(expected="called `Result::unwrap()` on an `Err` value: \"parse error: Position(Alt, [41])\"")]
     fn test_invalid2() { parse_fail(")") }
 
     #[test]
-    #[should_panic(expected="called `Result::unwrap()` on an `Err` value: \"parse error: Incomplete(Size(1))\"")]
+    #[should_panic(expected="called `Result::unwrap()` on an `Err` value: \"incomplete: Size(1)\"")]
     fn test_invalid3() { parse_fail("\"hello") }
 
     #[test]
