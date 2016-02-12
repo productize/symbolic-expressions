@@ -1,412 +1,102 @@
-// (c) 2015 Joost Yervante Damad <joost@productize.be>
+#[macro_use]
+extern crate nom;
 
-// loosely based on https://github.com/cgaebel/sexp
-// latest version can be found at https://github.com/andete/rust_sexp
+use nom::{IResult, multispace};
 
-use std::fmt;
+use std::str;
 use std::str::FromStr;
-use std::f64;
-
+use std::fmt;
 use std::fs::File;
 use std::io::prelude::*;
 
-#[derive(Clone)]
-pub enum Atom {
-  S(String),
-  Q(String),
-  I(i64),
-  F(f64),
-}
-
-impl Atom {
-    pub fn f(&self) -> Result<f64,String> {
-        match *self {
-            Atom::F(f) => Ok(f),
-            Atom::I(i) => Ok(i as f64),
-            ref x => Err(format!("not a float: {}", x))
-        }
-    }
-    pub fn i(&self) -> Result<i64,String> {
-        match *self {
-            Atom::I(i) => Ok(i),
-            ref x => Err(format!("not an int: {}", x))
-        }
-    }
-    pub fn string(&self) -> Result<String,String> {
-        match *self {
-            Atom::S(ref s) => Ok(s.clone()),
-            Atom::Q(ref s) => Ok(s.clone()),
-            ref x => Err(format!("not a string: {}", x))
-        }
-    }
-    pub fn as_string(&self) -> Result<String,String> {
-        match *self {
-            Atom::S(ref s) => Ok(s.clone()),
-            Atom::Q(ref s) => Ok(s.clone()),
-            Atom::F(ref s) => Ok(format!("{}", s)),
-            Atom::I(ref s) => Ok(format!("{}", s)),
-        }
-    }
-}
-
-
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub enum Sexp {
-  Atom(Atom),
-  Empty,
-  List(Vec<Sexp>),
+    String(String),
+    List(Vec<Sexp>),
+    Empty,
 }
+
+pub type ERes<T> = Result<T, String>;
 
 impl Sexp {
-    pub fn atom(&self) -> Result<&Atom,String> {
-        match *self {
-            Sexp::Atom(ref f) => Ok(f),
-            ref x => Err(format!("not an atom: {}", x))
-        }
-    }
-    pub fn list(&self) -> Result<&Vec<Sexp>,String> {
+    pub fn list(&self) -> ERes<&Vec<Sexp> > {
         match *self {
             Sexp::List(ref v) => Ok(v),
             ref x => Err(format!("not a list: {}", x))
         }
     }
+    
+    pub fn string(&self) -> ERes<&String> {
+        match *self {
+            Sexp::String(ref s) => Ok(s),
+            ref x => Err(format!("not a string: {}", x))
+        }
+    }
 
-    pub fn list_name(&self) -> Result<String, String> {
+    pub fn f(&self) -> ERes<f64> {
+        let s = try!(self.string());
+        match f64::from_str(&s) {
+            Ok(f) => Ok(f),
+            _ => Err(format!("Error parsing float"))
+        }
+    }
+
+    pub fn i(&self) -> ERes<i64> {
+        let s = try!(self.string());
+        match i64::from_str(&s) {
+            Ok(f) => Ok(f),
+            _ => Err(format!("Error parsing int"))
+        }
+    }
+    
+    pub fn list_name(&self) -> ERes<&String> {
         let l = try!(self.list());
         let l = &l[..];
         let a = try!(l[0].string());
         Ok(a)
     }
 
-    pub fn slice_atom(&self, s:&str) -> Result<&[Sexp],String> {
-        let v = match *self {
-            Sexp::List(ref v) => v,
-            ref x => return Err(format!("not a list: {}", x))
-        };
+    pub fn slice_atom(&self, s:&str) -> ERes<&[Sexp]> {
+        let v = try!(self.list());
         let v2 =&v[..];
-        let st = try!(try!(v2[0].atom()).string());
+        let st = try!(v2[0].string());
         if st != s {
             return Err(format!("list doesn't start with {}, but with {}", s, st))
         };
         Ok(&v[1..])
     }
-
-    pub fn f(&self) -> Result<f64,String> {
-        let a = try!(self.atom());
-        a.f()
-    }
-    
-    pub fn i(&self) -> Result<i64,String> {
-        let a = try!(self.atom());
-        a.i()
-    }
-    pub fn string(&self) -> Result<String,String> {
-        let a = try!(self.atom());
-        a.string()
-    }
-    
-    pub fn as_string(&self) -> Result<String,String> {
-        let a = try!(self.atom());
-        a.as_string()
-    }
-}
-
-pub struct ParseError {
-    msg: &'static str,
-    line: usize,
-    lpos: usize,
-}
-
-pub enum Error {
-    ParseError(ParseError),
-    IOError(std::io::Error),
-}
-
-pub type ERes<T> = Result<T, Error>;
-
-fn err_parse<T>(msg: &'static str, state: &ParseState) -> ERes<T> {
-    Err(Error::ParseError(ParseError { msg: msg, line: state.line, lpos: state.lpos}))
-}
-
-fn err_io<T>(err: std::io::Error) -> ERes<T> {
-    Err(Error::IOError(err))
-}
-
-struct ParseState {
-    pos: usize,
-    line: usize,
-    lpos: usize,
-    vec: Vec<char>,
-    len: usize,
-    store_pos: usize,
-    store_line: usize,
-    store_lpos: usize,
-}
-
-impl ParseState {
-    fn peek(&self) -> ERes<char> {
-        if self.pos >= self.len {
-            return err_parse("end of document reached", self)
-        }
-        Ok(self.vec[self.pos])
-    }
-    fn peek_option(&self) -> Option<char> {
-        if self.pos >= self.len {
-            return None
-        }
-        Some(self.vec[self.pos])
-    }
-    fn next(&mut self) -> ERes<()> {
-        if self.pos >= self.len {
-            return err_parse("end of document reached", self)
-        }
-        let c = self.vec[self.pos];
-        self.pos += 1;
-        match c {
-            '\r' | '\n' => {
-                self.lpos = 0;
-                self.line += 1;
-            }
-            _ => {
-                self.lpos += 1;
-            }
-        }
-        Ok(())
-    }
-
-    fn store_pos(&mut self) {
-        self.store_pos = self.pos;
-        self.store_line = self.line;
-        self.store_lpos = self.lpos;
-           
-    }
-
-    fn restore_pos(&mut self) {
-        self.pos = self.store_pos;
-        self.line = self.store_line;
-        self.lpos = self.store_lpos;
-    }
-}
-
-
-impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        match *self {
-            Error::ParseError(ref p) =>
-                write!(f, "Parse Error {}:{}: {}", p.line, p.lpos, p.msg),
-            Error::IOError(ref i) =>
-                write!(f, "{}", i)
-        }
-    }
-}
-
-impl fmt::Debug for Error {
-    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        match *self {
-            Error::ParseError(ref p) =>
-                write!(f, "Parse Error {}:{}: {}", p.line, p.lpos, p.msg),
-            Error::IOError(ref i) =>
-                write!(f, "{}", i)
-        }
-    }
-}
-
-impl fmt::Display for Atom {
-  fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-    match *self {
-        Atom::S(ref s) => write!(f, "{}", s),
-        Atom::Q(ref s) => write!(f, "\"{}\"", s),
-        Atom::I(i)     => write!(f, "{}", i),
-        Atom::F(d)     => {
-            let z = d.floor();
-            if d - z < f64::EPSILON {
-                write!(f, "{}.0", z)
-            } else {
-                write!(f, "{}", d)
-            }
-        }    
-    }
-  }
 }
 
 impl fmt::Display for Sexp {
-  fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-    match *self {
-      Sexp::Atom(ref a) => write!(f, "{}", a),
-      Sexp::List(ref xs) => {
-        try!(write!(f, "("));
-        for (i, x) in xs.iter().enumerate() {
-          let s = if i == 0 { "" } else { " " };
-          try!(write!(f, "{}{}", s, x));
-        }
-        write!(f, ")")
-      },
-      Sexp::Empty => write!(f, ""),
-    }
-  }
-}
-
-fn parse_list(state: &mut ParseState) -> ERes<Sexp> {
-    //println!("list");
-    try!(state.next()); // skip (
-    let mut first = true;
-    let mut l: Vec<Sexp> = Vec::new();
-    loop {
-        match try!(state.peek()) {
-            ')' => {
-                try!(state.next());
-                break;
-            }
-            ' ' | '\t' | '\r' | '\n' => {
-                try!(state.next());
-            }
-            _ => {
-                let res = try!(parse_sexp(state));
-                if first {
-                    //println!("List: {}", &res);
-                    first = false;
+    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+        match *self {
+            Sexp::String(ref s) => {
+                if s.contains("(") || s.contains(" ") {
+                    write!(f,"\"{}\"", s)
+                } else {
+                    write!(f,"{}", s)
                 }
-                l.push(res)
-            }
-        }
-    }
-    let l = Sexp::List(l);
-    //println!("Found list {}", &l);
-    Ok(l)
-}
-
-fn parse_quoted_string(state: &mut ParseState) -> ERes<Atom> {
-    //println!("qstring");
-    try!(state.next()); // skip "
-    let mut s = String::new();
-    loop {
-        match try!(state.peek()) {
-            '"' => {
-                try!(state.next());
-                break
-            }
-            x @ '\r' | x @ '\n' => {
-                s.push(x);
-                try!(state.next());
+            },
+            Sexp::List(ref v) => {
+                try!(write!(f, "("));
+                for (i, x) in v.iter().enumerate() {
+                    let s = if i == 0 { "" } else { " " };
+                    try!(write!(f, "{}{}", s, x));
                 }
-            x => {
-                s.push(x);
-                try!(state.next());
-            } 
-        }
-    }
-    //println!("Found quoted string {}", s);
-    Ok(Atom::Q(s))
-}
-
-fn parse_string(state: &mut ParseState) -> ERes<Atom> {
-    //println!("string");
-    let mut s = String::new();
-    loop {
-        match state.peek_option() {
-            Some(x) => {
-                match x {
-                    ' ' | '\t' | '\r' | '\n' | ')' => break,
-                    '"' => return err_parse("unexpected \" in string", state),
-                    x => s.push(x),
-                }
-            }
-            None => {
-                break;
-            }
-        }
-        try!(state.next())
-    }
-    //println!("Found string {}", s);
-    Ok(Atom::S(s))
-}
-
-fn parse_number(state: &mut ParseState) -> ERes<Atom> {
-    //println!("number");
-    let mut s = String::new();
-    loop {
-        match state.peek_option() {
-            Some(x) => {
-                match x {
-                    ' ' | '\r' | '\n' | '\t' | ')' => {
-                        break
-                    },
-                    '0' ... '9' | '.' | '-' => {
-                        s.push(state.vec[state.pos])
-                    },
-                    _ => {
-                        return err_parse("unexpected char in number", &state)
-                    },
-                }
-            }
-            None => {
-                break
-            } 
-        }
-        try!(state.next())
-    }
-    //println!("Found number {}", s);
-    let s2: &str = &s[..];
-    if s.contains('.') {
-        Ok(Atom::F(f64::from_str(s2).unwrap()))
-    } else {
-        Ok(Atom::I(i64::from_str(s2).unwrap()))
-    }
-}
-
-fn parse_atom(state: &mut ParseState) -> ERes<Sexp> {
-    //println!("atom");
-    let a = match try!(state.peek()) {
-        '"' => {
-            try!(parse_quoted_string(state))
-        },
-        '0' ... '9' | '.' | '-' => {
-            state.store_pos();
-            match parse_number(state) {
-                Ok(a) => {
-                    a
-                },
-                Err(_) => {
-                    state.restore_pos();
-                    try!(parse_string(state))
-                },
-            }
-        }
-        _ => {
-            try!(parse_string(state))
-        }
-    };
-    Ok(Sexp::Atom(a))
-}
-
-
-fn parse_sexp(state: &mut ParseState) -> ERes<Sexp> {
-    loop {
-        match try!(state.peek()) {
-            '(' => {
-                return parse_list(state)
-            }
-            ' ' | '\t' | '\r' | '\n' => {
-                try!(state.next());
-            }
-            ')' => {
-                return err_parse("unmatched )", state)
-            }
-            _ => {
-                return parse_atom(state)
-            }
+                write!(f, ")")
+            },
+            Sexp::Empty => Ok(())
         }
     }
 }
 
-fn parse(data: &str) -> ERes<Sexp> {
-    if data.len() == 0 {
-        Ok(Sexp::Empty)
-    } else {
-        let vec: Vec<char> = data.chars().collect();
-        let len = vec.len();
-        let state = &mut ParseState { pos: 0, line: 1, lpos: 0, vec: vec, len: len, store_pos: 0, store_lpos: 0, store_line: 0, };
-        parse_sexp(state)
+pub fn parse_str(sexp: &str) -> Result<Sexp, String> {
+    if sexp.len() == 0 {
+        return Ok(Sexp::Empty)
+    }
+    match parse_sexp(&sexp.as_bytes()[..]) {
+        IResult::Done(_, c) => Ok(c),
+        x          => Err(format!("parse error: {:?}", x))
     }
 }
 
@@ -417,16 +107,65 @@ fn read_file(name: &str) -> Result<String, std::io::Error> {
     Ok(s)
 }
 
-pub fn parse_str(s: &str) -> ERes<Sexp> {
-    parse(s)
-}
-
 pub fn parse_file(name: &str) -> ERes<Sexp> {
     let s = try!(match read_file(name) {
         Ok(s) => Ok(s),
-        Err(x) => err_io(x),
-    });
-    parse(&s[..])
+        Err(x) => Err(format!("{:?}", x))
+    }); 
+    parse_str(&s[..])
+}
+
+named!(parse_qstring<String>,
+       map_res!(
+           map_res!(
+               delimited!(char!('\"'), is_not!("\""), char!('\"')),
+               str::from_utf8),
+           FromStr::from_str)
+       );
+
+named!(parse_bare_string<String>,
+       map_res!(
+           map_res!(
+               is_not!(b")( \r\n"),
+               str::from_utf8),
+           FromStr::from_str)
+       );
+
+named!(parse_string<String>,
+       alt!(parse_qstring | parse_bare_string)
+       );
+
+named!(parse_list<Vec<Sexp> >,
+       chain!(
+           char!('(') ~
+           v: many0!(parse_sexp) ~
+           char!(')'),
+           || v)
+       );
+
+named!(parse_sexp<Sexp>,
+       chain!(
+           opt!(multispace) ~
+           s: alt!(map!(parse_list,Sexp::List) | map!(parse_string,Sexp::String))
+               ,|| s)
+       );
+
+
+// internal tests
+#[test]
+fn test_qstring1() {
+    assert_eq!(parse_string(&b"\"hello world\""[..]), IResult::Done(&b""[..], String::from("hello world")));
+}
+
+#[test]
+#[should_panic(expected="assertion failed: `(left == right)` (left: `Incomplete(Size(1))`, right: `Done([], \"hello\")`)")]
+fn test_qstring2() {
+    assert_eq!(parse_string(&b"\"hello"[..]), IResult::Done(&b""[..], String::from("hello")));
+}
+
+#[test]
+fn test_string1() {
+    assert_eq!(parse_string(&b"hello world"[..]), IResult::Done(&b" world"[..], String::from("hello")));
 }
 
 #[cfg(test)]
@@ -434,10 +173,16 @@ mod tests {
     use super::*;
 
     #[allow(dead_code)]
+    fn check_parse_res(s: &str, o:&str) {
+        let e = parse_str(s).unwrap();
+        let t = format!("{}", e);
+        assert_eq!(o, t)
+    }
+    #[allow(dead_code)]
     fn check_parse(s: &str) {
         let e = parse_str(s).unwrap();
         let t = format!("{}", e);
-        assert_eq!(s, t);
+        assert_eq!(s, t)
     }
 
     #[allow(dead_code)]
@@ -456,7 +201,13 @@ mod tests {
     fn test_string() { check_parse("hello") }
 
     #[test]
-    fn test_qstring() { check_parse("\"hello\"") }
+    fn test_qstring_a() { check_parse_res("\"hello\"", "hello") }
+    
+    #[test]
+    fn test_qstring_a2() { check_parse("\"hello world\"") }
+    
+    #[test]
+    fn test_qstring_a3() { check_parse("\"hello(world)\"") }
 
     #[test]
     fn test_number() { check_parse("1.3") }
@@ -471,7 +222,7 @@ mod tests {
     fn test_br_string() { check_parse("(world)") }
 
     #[test]
-    fn test_br_qstring() { check_parse("(\"world\")") }
+    fn test_br_qstring() { check_parse_res("(\"world\")", "(world)") }
 
     #[test]
     fn test_br_int() { check_parse("(42)") }
@@ -486,26 +237,18 @@ mod tests {
     fn test_number_string() { check_parse("567A_WZ") }
     
     #[test]
-    #[should_panic(expected="Parse Error 1:1: end of document reached")]
+    #[should_panic(expected="called `Result::unwrap()` on an `Err` value: \"parse error: Incomplete(Size(2))\"")]
     fn test_invalid1() { parse_fail("(") }
 
     #[test]
-    #[should_panic(expected="Parse Error 1:0: unmatched )")]
+    #[should_panic(expected="called `Result::unwrap()` on an `Err` value: \"parse error: Error(Position(Alt, [41]))\"")]
     fn test_invalid2() { parse_fail(")") }
 
     #[test]
-    #[should_panic(expected="Parse Error 1:6: end of document reached")]
+    #[should_panic(expected="called `Result::unwrap()` on an `Err` value: \"parse error: Incomplete(Size(1))\"")]
     fn test_invalid3() { parse_fail("\"hello") }
 
     #[test]
     fn test_complex() { check_parse("(module SWITCH_3W_SIDE_MMP221-R (layer F.Cu) (descr \"\") (pad 1 thru_hole rect (size 1.2 1.2) (at -2.5 -1.6 0) (layers *.Cu *.Mask) (drill 0.8)) (pad 2 thru_hole rect (size 1.2 1.2) (at 0.0 -1.6 0) (layers *.Cu *.Mask) (drill 0.8)) (pad 3 thru_hole rect (size 1.2 1.2) (at 2.5 -1.6 0) (layers *.Cu *.Mask) (drill 0.8)) (pad 5 thru_hole rect (size 1.2 1.2) (at 0.0 1.6 0) (layers *.Cu *.Mask) (drill 0.8)) (pad 6 thru_hole rect (size 1.2 1.2) (at -2.5 1.6 0) (layers *.Cu *.Mask) (drill 0.8)) (pad 4 thru_hole rect (size 1.2 1.2) (at 2.5 1.6 0) (layers *.Cu *.Mask) (drill 0.8)) (fp_line (start -4.5 -1.75) (end 4.5 -1.75) (layer F.SilkS) (width 0.127)) (fp_line (start 4.5 -1.75) (end 4.5 1.75) (layer F.SilkS) (width 0.127)) (fp_line (start 4.5 1.75) (end -4.5 1.75) (layer F.SilkS) (width 0.127)) (fp_line (start -4.5 1.75) (end -4.5 -1.75) (layer F.SilkS) (width 0.127)))") }
-
-    /*
-    #[test]
-    fn test_temp() {
-        let s = parse_file("/tmp/usbser.kicad_pcb").unwrap();
-        println!("{}", s);
-    }
-    */
 }
 
