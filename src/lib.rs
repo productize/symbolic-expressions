@@ -88,6 +88,14 @@ impl fmt::Display for Sexp {
     }
 }
 
+pub fn display_string(s:&String) -> String {
+    if s.contains("(") || s.contains(" ") || s.len() == 0 {
+        format!("\"{}\"", s)
+    } else {
+        s.clone()
+    }
+}
+
 pub fn parse_str(sexp: &str) -> Result<Sexp, String> {
     if sexp.len() == 0 {
         return Ok(Sexp::Empty)
@@ -199,6 +207,9 @@ mod tests {
 
     #[test]
     fn test_empty() { check_parse("") }
+    
+    #[test]
+    fn test_empty_qstring() { check_parse("(hello \"\")") }
 
     #[test]
     fn test_minimal() { check_parse("()") }
