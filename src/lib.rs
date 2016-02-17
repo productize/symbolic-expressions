@@ -9,26 +9,41 @@ use std::io::prelude::*;
 
 // TODO: store formatting hints in Sexp
 #[derive(Debug, Clone)]
-pub enum Sexp {
+pub struct Sexp {
+    element:Element,
+}
+
+#[derive(Debug, Clone)]
+pub enum Element {
     String(String),
     List(Vec<Sexp>),
     Empty,
 }
 
+
 pub type ERes<T> = Result<T, String>;
 
 impl Sexp {
+
+    fn new_empty() -> Sexp {
+        Sexp { element:Element::Empty }
+    }
+
+    fn from(element:Element) -> Sexp {
+        Sexp { element:element }
+    }
+    
     pub fn list(&self) -> ERes<&Vec<Sexp> > {
-        match *self {
-            Sexp::List(ref v) => Ok(v),
-            ref x => Err(format!("not a list: {}", x))
+        match self.element {
+            Element::List(ref v) => Ok(v),
+            _ => Err(format!("not a list: {}", self))
         }
     }
     
     pub fn string(&self) -> ERes<&String> {
-        match *self {
-            Sexp::String(ref s) => Ok(s),
-            ref x => Err(format!("not a string: {}", x))
+        match self.element {
+            Element::String(ref s) => Ok(s),
+            _ => Err(format!("not a string: {}", self))
         }
     }
 
@@ -68,15 +83,15 @@ impl Sexp {
 
 impl fmt::Display for Sexp {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        match *self {
-            Sexp::String(ref s) => {
+        match self.element {
+            Element::String(ref s) => {
                 if s.contains("(") || s.contains(" ") {
                     write!(f,"\"{}\"", s)
                 } else {
                     write!(f,"{}", s)
                 }
             },
-            Sexp::List(ref v) => {
+            Element::List(ref v) => {
                 try!(write!(f, "("));
                 for (i, x) in v.iter().enumerate() {
                     let s = if i == 0 { "" } else { " " };
@@ -84,7 +99,7 @@ impl fmt::Display for Sexp {
                 }
                 write!(f, ")")
             },
-            Sexp::Empty => Ok(())
+            Element::Empty => Ok(())
         }
     }
 }
@@ -99,7 +114,7 @@ pub fn display_string(s:&String) -> String {
 
 pub fn parse_str(sexp: &str) -> Result<Sexp, String> {
     if sexp.len() == 0 {
-        return Ok(Sexp::Empty)
+        return Ok(Sexp::new_empty())
     }
     match parse_sexp(&sexp.as_bytes()[..]) {
         nom::IResult::Done(_, c) => Ok(c),
@@ -158,11 +173,13 @@ named!(parse_list<Vec<Sexp> >,
        );
 
 named!(parse_sexp<Sexp>,
+       map!(
        chain!(
            opt!(nom::multispace) ~
-               s: alt!(map!(parse_list,Sexp::List) | map!(parse_string,Sexp::String)) ~
+               s: alt!(map!(parse_list,Element::List) | map!(parse_string,Element::String)) ~
                opt!(nom::multispace)
-               ,|| s)
+               ,|| s),
+               Sexp::from)
        );
 
 
