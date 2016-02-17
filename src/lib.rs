@@ -7,6 +7,7 @@ use std::fmt;
 use std::fs::File;
 use std::io::prelude::*;
 
+// TODO: store formatting hints in Sexp
 #[derive(Debug, Clone)]
 pub enum Sexp {
     String(String),
