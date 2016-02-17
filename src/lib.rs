@@ -185,6 +185,7 @@ named!(parse_list<Vec<Sexp> >,
            || v)
        );
 
+// TODO: consider lines with just spaces and a nl as also nl
 named!(line_ending<usize>,
        chain!(
            opt!(nom::space) ~
