@@ -11,6 +11,8 @@ use std::io::prelude::*;
 #[derive(Debug, Clone)]
 pub struct Sexp {
     element:Element,
+    indent:i64,
+    nl:bool,
 }
 
 #[derive(Debug, Clone)]
@@ -26,11 +28,11 @@ pub type ERes<T> = Result<T, String>;
 impl Sexp {
 
     fn new_empty() -> Sexp {
-        Sexp { element:Element::Empty }
+        Sexp { element:Element::Empty, indent:0, nl:false, }
     }
 
     fn from(element:Element) -> Sexp {
-        Sexp { element:element }
+        Sexp { element:element, indent:0, nl:false, }
     }
     
     pub fn list(&self) -> ERes<&Vec<Sexp> > {
@@ -174,10 +176,12 @@ named!(parse_list<Vec<Sexp> >,
 
 named!(parse_sexp<Sexp>,
        map!(
-       chain!(
-           opt!(nom::multispace) ~
+           chain!(
+               // TODO: count space
+               opt!(nom::multispace) ~
                s: alt!(map!(parse_list,Element::List) | map!(parse_string,Element::String)) ~
                opt!(nom::multispace)
+               // TODO: eat space and return nl
                ,|| s),
                Sexp::from)
        );
