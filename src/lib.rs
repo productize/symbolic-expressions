@@ -10,8 +10,7 @@ use std::io::prelude::*;
 #[derive(Debug, Clone)]
 pub struct Sexp {
     element:Element,
-    indent:String,
-    nl:usize,
+    meta:Meta,
 }
 
 #[derive(Debug, Clone)]
@@ -21,17 +20,23 @@ pub enum Element {
     Empty,
 }
 
+#[derive(Debug, Clone)]
+pub struct Meta {
+    indent:String,
+    nl:usize,
+}
+
 
 pub type ERes<T> = Result<T, String>;
 
 impl Sexp {
 
     fn new_empty() -> Sexp {
-        Sexp { element:Element::Empty, indent:String::from(""), nl:0, }
+        Sexp { element:Element::Empty, meta:Meta { indent:String::from(""), nl:0,} }
     }
 
     fn new(element:Element, indent:String, nl:usize) -> Sexp {
-        Sexp { element:element, indent:indent, nl:nl, }
+        Sexp { element:element, meta:Meta { indent:indent, nl:nl, } }
     }
     
     pub fn list(&self) -> ERes<&Vec<Sexp> > {
@@ -84,8 +89,7 @@ impl Sexp {
 
 impl fmt::Display for Sexp {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        println!("indent: |{}|", self.indent);
-        try!(write!(f, "{}", self.indent));
+        try!(write!(f, "{}", self.meta.indent));
         try!(match self.element {
             Element::String(ref s) => {
                 if s.contains("(") || s.contains(" ") {
@@ -98,16 +102,15 @@ impl fmt::Display for Sexp {
                 try!(write!(f, "("));
                 let mut prev_nl = 0;
                 for (i, x) in v.iter().enumerate() {
-                    let s = if i == 0 || x.indent.len() > 0 || prev_nl > 0 { "" } else { " " };
+                    let s = if i == 0 || x.meta.indent.len() > 0 || prev_nl > 0 { "" } else { " " };
                     try!(write!(f, "{}{}", s, x));
-                    prev_nl = x.nl;
+                    prev_nl = x.meta.nl;
                 }
                 write!(f, ")")
             },
             Element::Empty => Ok(())
         });
-        println!("nl: {}", self.nl);
-        for _ in 0..self.nl {
+        for _ in 0..self.meta.nl {
             try!(writeln!(f,""));
         }
         Ok(())
