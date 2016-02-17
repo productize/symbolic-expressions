@@ -7,12 +7,11 @@ use std::fmt;
 use std::fs::File;
 use std::io::prelude::*;
 
-// TODO: store formatting hints in Sexp
 #[derive(Debug, Clone)]
 pub struct Sexp {
     element:Element,
-    indent:i64,
-    nl:bool,
+    indent:String,
+    nl:usize,
 }
 
 #[derive(Debug, Clone)]
@@ -28,11 +27,11 @@ pub type ERes<T> = Result<T, String>;
 impl Sexp {
 
     fn new_empty() -> Sexp {
-        Sexp { element:Element::Empty, indent:0, nl:false, }
+        Sexp { element:Element::Empty, indent:String::from(""), nl:0, }
     }
 
-    fn from(element:Element) -> Sexp {
-        Sexp { element:element, indent:0, nl:false, }
+    fn new(element:Element, indent:String, nl:usize) -> Sexp {
+        Sexp { element:element, indent:indent, nl:nl, }
     }
     
     pub fn list(&self) -> ERes<&Vec<Sexp> > {
@@ -85,7 +84,9 @@ impl Sexp {
 
 impl fmt::Display for Sexp {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        match self.element {
+        println!("indent: |{}|", self.indent);
+        try!(write!(f, "{}", self.indent));
+        try!(match self.element {
             Element::String(ref s) => {
                 if s.contains("(") || s.contains(" ") {
                     write!(f,"\"{}\"", s)
@@ -95,14 +96,21 @@ impl fmt::Display for Sexp {
             },
             Element::List(ref v) => {
                 try!(write!(f, "("));
+                let mut prev_nl = 0;
                 for (i, x) in v.iter().enumerate() {
-                    let s = if i == 0 { "" } else { " " };
+                    let s = if i == 0 || x.indent.len() > 0 || prev_nl > 0 { "" } else { " " };
                     try!(write!(f, "{}{}", s, x));
+                    prev_nl = x.nl;
                 }
                 write!(f, ")")
             },
             Element::Empty => Ok(())
+        });
+        println!("nl: {}", self.nl);
+        for _ in 0..self.nl {
+            try!(writeln!(f,""));
         }
+        Ok(())
     }
 }
 
@@ -174,16 +182,27 @@ named!(parse_list<Vec<Sexp> >,
            || v)
        );
 
+named!(line_ending<usize>,
+       chain!(
+           opt!(nom::space) ~
+               c: opt!(is_a!(b"\r\n"))
+               , || match c { None => 0, Some(ref x) => x.len(), }
+               )
+       );
+
 named!(parse_sexp<Sexp>,
-       map!(
            chain!(
-               // TODO: count space
-               opt!(nom::multispace) ~
-               s: alt!(map!(parse_list,Element::List) | map!(parse_string,Element::String)) ~
-               opt!(nom::multispace)
-               // TODO: eat space and return nl
-               ,|| s),
-               Sexp::from)
+               indent: opt!(nom::space) ~
+                   s: alt!(map!(parse_list,Element::List) | map!(parse_string,Element::String)) ~
+                   nl: line_ending
+                   ,
+               || {
+                   let indent = match indent {
+                       None => String::new(),
+                       Some(x) => String::from(str::from_utf8(x).unwrap()),
+                   };
+                   Sexp::new(s, indent, nl)
+               })
        );
 
 
@@ -289,5 +308,32 @@ mod tests {
 
     #[test]
     fn test_complex() { check_parse("(module SWITCH_3W_SIDE_MMP221-R (layer F.Cu) (descr \"\") (pad 1 thru_hole rect (size 1.2 1.2) (at -2.5 -1.6 0) (layers *.Cu *.Mask) (drill 0.8)) (pad 2 thru_hole rect (size 1.2 1.2) (at 0.0 -1.6 0) (layers *.Cu *.Mask) (drill 0.8)) (pad 3 thru_hole rect (size 1.2 1.2) (at 2.5 -1.6 0) (layers *.Cu *.Mask) (drill 0.8)) (pad 5 thru_hole rect (size 1.2 1.2) (at 0.0 1.6 0) (layers *.Cu *.Mask) (drill 0.8)) (pad 6 thru_hole rect (size 1.2 1.2) (at -2.5 1.6 0) (layers *.Cu *.Mask) (drill 0.8)) (pad 4 thru_hole rect (size 1.2 1.2) (at 2.5 1.6 0) (layers *.Cu *.Mask) (drill 0.8)) (fp_line (start -4.5 -1.75) (end 4.5 -1.75) (layer F.SilkS) (width 0.127)) (fp_line (start 4.5 -1.75) (end 4.5 1.75) (layer F.SilkS) (width 0.127)) (fp_line (start 4.5 1.75) (end -4.5 1.75) (layer F.SilkS) (width 0.127)) (fp_line (start -4.5 1.75) (end -4.5 -1.75) (layer F.SilkS) (width 0.127)))") }
+
+    #[test]
+    fn test_multiline() {
+        check_parse("\
+(hello \"test it\"
+    (foo bar)
+    (mars venus)
+)
+")
+    }
+
+    #[test]
+    fn test_multiline2() {
+        check_parse("\
+(hello world
+  mad
+    (world)
+  not)")
+    }
+
+    #[test]
+    fn test_multiline_two_empty() {
+        check_parse("\
+(hello
+
+world)")
+    }
 }
 
