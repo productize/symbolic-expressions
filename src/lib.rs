@@ -43,11 +43,11 @@ pub type ERes<T> = Result<T, String>;
 
 impl Sexp {
 
-    fn new_empty() -> Sexp {
+    pub fn new_empty() -> Sexp {
         Sexp { element:Element::Empty, meta:Meta { indent:String::from(""), nl:0,} }
     }
 
-    fn new(element:Element, indent:String, nl:usize) -> Sexp {
+    pub fn new(element:Element, indent:String, nl:usize) -> Sexp {
         Sexp { element:element, meta:Meta { indent:indent, nl:nl, } }
     }
 
