@@ -14,8 +14,8 @@ pub trait IntoSexp {
 
 #[derive(Debug, Clone)]
 pub struct Sexp {
-    element:Element,
-    meta:Meta,
+    pub element:Element,
+    pub meta:Meta,
 }
 
 pub struct Compact<'a> {
