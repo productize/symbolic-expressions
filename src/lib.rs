@@ -7,6 +7,11 @@ use std::fmt;
 use std::fs::File;
 use std::io::prelude::*;
 
+// like Into trait but works from a ref avoiding consumption or expensive clone
+pub trait IntoSexp {
+    fn into_sexp(&self) -> Sexp;
+}
+
 #[derive(Debug, Clone)]
 pub struct Sexp {
     element:Element,
@@ -26,7 +31,6 @@ pub struct Meta {
     nl:usize,
 }
 
-
 pub type ERes<T> = Result<T, String>;
 
 impl Sexp {
@@ -37,6 +41,10 @@ impl Sexp {
 
     fn new(element:Element, indent:String, nl:usize) -> Sexp {
         Sexp { element:element, meta:Meta { indent:indent, nl:nl, } }
+    }
+
+    pub fn from<T:IntoSexp>(t:&T) -> Sexp {
+        t.into_sexp()
     }
     
     pub fn list(&self) -> ERes<&Vec<Sexp> > {
