@@ -1,6 +1,6 @@
 [package]
 name = "rustysexp"
-version = "0.2.0"
+version = "0.3.0"
 authors = ["Joost Damad <joost@productize.be>"]
 
 [dependencies]
