@@ -18,6 +18,14 @@ pub struct Sexp {
     meta:Meta,
 }
 
+pub struct Compact<'a> {
+    what:&'a Sexp,
+}
+
+pub fn compact<'a>(e:&'a Sexp) -> Compact<'a> {
+    Compact { what:e }
+}
+
 #[derive(Debug, Clone)]
 pub enum Element {
     String(String),
@@ -122,6 +130,29 @@ impl fmt::Display for Sexp {
             try!(writeln!(f,""));
         }
         Ok(())
+    }
+}
+
+impl<'a> fmt::Display for Compact<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+        match self.what.element {
+            Element::String(ref s) => {
+                if s.contains("(") || s.contains(" ") {
+                    write!(f,"\"{}\"", s)
+                } else {
+                    write!(f,"{}", s)
+                }
+            },
+            Element::List(ref v) => {
+                try!(write!(f, "("));
+                for (i, x) in v.iter().enumerate() {
+                    let s = if i == 0 { "" } else { " " };
+                    try!(write!(f, "{}{}", s, compact(x)));
+                }
+                write!(f, ")")
+            },
+            Element::Empty => Ok(())
+        }
     }
 }
 
@@ -256,6 +287,12 @@ mod tests {
     fn parse_fail(s: &str) {
         parse_str(s).unwrap();
     }
+    #[allow(dead_code)]
+    fn check_compact(s: &str, o:&str) {
+        let e = parse_str(s).unwrap();
+        let t = format!("{}", compact(&e));
+        assert_eq!(o, t)
+    }
     
 
     #[test]
@@ -346,6 +383,16 @@ mod tests {
 (hello
 
 world)")
+    }
+
+    #[test]
+    fn test_compact1() {
+        check_compact("( hello
+world \"foo
+  bar\" 
+     (baz)
+)", "(hello world \"foo
+  bar\" (baz))")
     }
 }
 
