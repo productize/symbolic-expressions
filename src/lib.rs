@@ -12,11 +12,6 @@ pub trait IntoSexp {
     fn into_sexp(&self) -> Sexp;
 }
 
-pub trait FromSexp {
-   fn from(&Sexp) -> Self; 
-}
-
-
 #[derive(Debug, Clone)]
 pub struct Sexp {
     pub element:Element,
@@ -372,7 +367,7 @@ mod tests {
     fn test_invalid2() { parse_fail(")") }
 
     #[test]
-    #[should_panic(expected="called `Result::unwrap()` on an `Err` value: \"incomplete: Size(1)\"")]
+    #[should_panic(expected="incomplete: Size")]
     fn test_invalid3() { parse_fail("\"hello") }
 
     #[test]
