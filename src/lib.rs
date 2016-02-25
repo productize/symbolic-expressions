@@ -12,6 +12,11 @@ pub trait IntoSexp {
     fn into_sexp(&self) -> Sexp;
 }
 
+pub trait FromSexp {
+   fn from(&Sexp) -> Self; 
+}
+
+
 #[derive(Debug, Clone)]
 pub struct Sexp {
     pub element:Element,
