@@ -102,6 +102,19 @@ impl Sexp {
         };
         Ok(&v[1..])
     }
+    pub fn slice_atom_num(&self, s:&str, num:usize) -> ERes<&[Sexp]> {
+        let v = try!(self.list());
+        let v2 =&v[..];
+        let st = try!(v2[0].string());
+        if st != s {
+            return Err(format!("list doesn't start with {}, but with {}", s, st))
+        };
+        let x = &v[1..];
+        if x.len() != num {
+            return Err(format!("list ({}) doesn't have {} elements", s, num))
+        }
+        Ok(x)      
+    }
 }
 
 impl fmt::Display for Sexp {
