@@ -111,7 +111,7 @@ impl Sexp {
         };
         let x = &v[1..];
         if x.len() != num {
-            return Err(format!("list ({}) doesn't have {} elements", s, num))
+            return Err(format!("list ({}) doesn't have {} elements but {}", s, num, x.len()))
         }
         Ok(x)      
     }
