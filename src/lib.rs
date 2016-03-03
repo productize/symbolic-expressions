@@ -109,11 +109,10 @@ impl Sexp {
         if st != s {
             return Err(format!("list doesn't start with {}, but with {}", s, st))
         };
-        let x = &v[1..];
-        if x.len() != num {
-            return Err(format!("list ({}) doesn't have {} elements but {}", s, num, x.len()))
+        if v.len() != (num+1) {
+            return Err(format!("list ({}) doesn't have {} elements but {}", s, num, v.len()-1))
         }
-        Ok(x)      
+        Ok(&v[1..])      
     }
 }
 
