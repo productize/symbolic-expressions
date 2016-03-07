@@ -102,6 +102,16 @@ impl Sexp {
         };
         Ok(&v[1..])
     }
+
+    pub fn named_value(&self, s:&str) -> ERes<&Sexp> {
+        let v = try!(self.list());
+        if v.len() != 2 {
+            return Err(format!("list {} is not a named_value", s))
+        }
+        let l = try!(self.slice_atom(s));
+        Ok(&l[0])
+    }
+    
     pub fn slice_atom_num(&self, s:&str, num:usize) -> ERes<&[Sexp]> {
         let v = try!(self.list());
         let v2 =&v[..];
