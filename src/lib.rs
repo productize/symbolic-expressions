@@ -111,6 +111,18 @@ impl Sexp {
         let l = try!(self.slice_atom(s));
         Ok(&l[0])
     }
+
+    pub fn named_value_i(&self, s:&str) -> ERes<i64> {
+        try!(self.named_value(s)).i()
+    }
+    
+    pub fn named_value_f(&self, s:&str) -> ERes<f64> {
+        try!(self.named_value(s)).f()
+    }
+    
+    pub fn named_value_string(&self, s:&str) -> ERes<&String> {
+        try!(self.named_value(s)).string()
+    }
     
     pub fn slice_atom_num(&self, s:&str, num:usize) -> ERes<&[Sexp]> {
         let v = try!(self.list());
