@@ -9,6 +9,7 @@ use std::str::FromStr;
 use std::fmt;
 use std::fs::File;
 use std::io::prelude::*;
+use std::io;
 
 // like Into trait but works from a ref avoiding consumption or expensive clone
 pub trait IntoSexp {
@@ -16,31 +17,10 @@ pub trait IntoSexp {
 }
 
 #[derive(Debug, Clone)]
-pub struct Sexp {
-    pub element:Element,
-    pub meta:Meta,
-}
-
-pub struct Compact<'a> {
-    what:&'a Sexp,
-}
-
-pub fn compact(e:&Sexp) -> Compact {
-    Compact { what:e }
-}
-
-#[derive(Debug, Clone)]
-pub enum Element {
+pub enum Sexp {
     String(String),
     List(Vec<Sexp>),
     Empty,
-}
-
-#[derive(Debug, Clone)]
-pub struct Meta {
-    indent:String,
-    nl:usize,
-    after_list:String,
 }
 
 pub type ERes<T> = Result<T, String>;
@@ -48,11 +28,7 @@ pub type ERes<T> = Result<T, String>;
 impl Sexp {
 
     pub fn new_empty() -> Sexp {
-        Sexp { element:Element::Empty, meta:Meta { indent:String::from(""), nl:0, after_list:String::from(""), } }
-    }
-
-    pub fn new(element:Element, indent:String, nl:usize, after_list:String) -> Sexp {
-        Sexp { element:element, meta:Meta { indent:indent, nl:nl, after_list:after_list, }, }
+        Sexp::Empty
     }
 
     pub fn from<T:IntoSexp>(t:&T) -> Sexp {
@@ -60,15 +36,15 @@ impl Sexp {
     }
     
     pub fn list(&self) -> ERes<&Vec<Sexp> > {
-        match self.element {
-            Element::List(ref v) => Ok(v),
+        match *self {
+            Sexp::List(ref v) => Ok(v),
             _ => Err(format!("not a list: {}", self))
         }
     }
     
     pub fn string(&self) -> ERes<&String> {
-        match self.element {
-            Element::String(ref s) => Ok(s),
+        match *self {
+            Sexp::String(ref s) => Ok(s),
             _ => Err(format!("not a string: {}", self))
         }
     }
@@ -143,53 +119,22 @@ impl Sexp {
 
 impl fmt::Display for Sexp {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        try!(write!(f, "{}", self.meta.indent));
-        try!(match self.element {
-            Element::String(ref s) => {
-                if s.contains("(") || s.contains(" ") {
-                    write!(f,"\"{}\"", s)
-                } else {
-                    write!(f,"{}", s)
-                }
-            },
-            Element::List(ref v) => {
-                try!(write!(f, "("));
-                let mut prev_nl = 0;
-                for (i, x) in v.iter().enumerate() {
-                    let s = if i == 0 || x.meta.indent.len() > 0 || prev_nl > 0 { "" } else { " " };
-                    try!(write!(f, "{}{}", s, x));
-                    prev_nl = x.meta.nl;
-                }
-                write!(f, "{})", self.meta.after_list)
-            },
-            Element::Empty => Ok(())
-        });
-        for _ in 0..self.meta.nl {
-            try!(writeln!(f,""));
-        }
-        Ok(())
-    }
-}
-
-impl<'a> fmt::Display for Compact<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        match self.what.element {
-            Element::String(ref s) => {
+        match *self {
+            Sexp::String(ref s) => {
                 if s.contains('(') || s.contains(' ') {
                     write!(f,"\"{}\"", s)
                 } else {
                     write!(f,"{}", s)
                 }
             },
-            Element::List(ref v) => {
+            Sexp::List(ref v) => {
                 try!(write!(f, "("));
-                for (i, x) in v.iter().enumerate() {
-                    let s = if i == 0 { "" } else { " " };
-                    try!(write!(f, "{}{}", s, compact(x)));
+                for x in v {
+                    try!(write!(f, "{}", x));
                 }
                 write!(f, ")")
             },
-            Element::Empty => Ok(())
+            Sexp::Empty => Ok(())
         }
     }
 }
@@ -250,17 +195,17 @@ named!(parse_bare_string<String>,
            FromStr::from_str)
        );
 
-named!(parse_string<(Element,Option<&[u8]>) >,
-       map!(alt!(parse_qstring | parse_bare_string), |x| (Element::String(x), None))
+named!(parse_string<Sexp>,
+       map!(alt!(parse_qstring | parse_bare_string), |x| Sexp::String(x))
        );
 
-named!(parse_list<(Element,Option<&[u8]>) >,
+named!(parse_list<Sexp>,
        chain!(
            char!('(') ~
                v: many0!(parse_sexp) ~
-               after_list: opt!(nom::multispace) ~ // sometimes there is space after a closing bracket, this would not be caught by parse_sexp
+               _space: opt!(nom::multispace) ~ // sometimes there is space after a closing bracket, this would not be caught by parse_sexp
                char!(')'),
-           || (Element::List(v), after_list) )
+           || Sexp::List(v) )
        );
 
 // TODO: consider lines with just spaces and a nl as also nl
@@ -274,22 +219,12 @@ named!(line_ending<usize>,
 
 named!(parse_sexp<Sexp>,
            chain!(
-               indent: opt!(nom::space) ~
-                   s_after_list: alt!(parse_list | parse_string) ~
-                   nl: line_ending
+               _indent: opt!(nom::space) ~
+                   sexp: alt!(parse_list | parse_string) ~
+                   _nl: line_ending
                    ,
                || {
-                   let s = s_after_list.0.clone();
-                   let after_list = s_after_list.1;
-                   let indent = match indent {
-                       None => String::new(),
-                       Some(x) => String::from(str::from_utf8(x).unwrap()),
-                   };
-                   let after_list = match after_list {
-                       None => String::new(),
-                       Some(x) => String::from(str::from_utf8(x).unwrap()),
-                   };
-                   Sexp::new(s, indent, nl, after_list)
+                   sexp
                })
        );
 
@@ -300,9 +235,8 @@ fn test_qstring1() {
     let x = parse_string(&b"\"hello world\""[..]);
     match x {
         nom::IResult::Done(_,y) => {
-            let (e, _) = y;
-            match e {
-                Element::String(f) => assert_eq!(String::from("hello world"), f),
+            match y {
+                Sexp::String(f) => assert_eq!(String::from("hello world"), f),
                 _ => panic!("not string"),
             }
         },
@@ -339,13 +273,6 @@ mod tests {
     fn parse_fail(s: &str) {
         parse_str(s).unwrap();
     }
-    #[allow(dead_code)]
-    fn check_compact(s: &str, o:&str) {
-        let e = parse_str(s).unwrap();
-        let t = format!("{}", compact(&e));
-        assert_eq!(o, t)
-    }
-    
 
     #[test]
     fn test_empty() { check_parse("") }
@@ -435,16 +362,6 @@ mod tests {
 (hello
 
 world)")
-    }
-
-    #[test]
-    fn test_compact1() {
-        check_compact("( hello
-world \"foo
-  bar\" 
-     (baz)
-)", "(hello world \"foo
-  bar\" (baz))")
     }
 
     #[test]
