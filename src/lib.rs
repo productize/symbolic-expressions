@@ -64,12 +64,6 @@ impl From<FromUtf8Error> for Error {
     }
 }
 
-impl From<String> for Error {
-    fn from(error: String) -> Error {
-        Error::Other(error)
-    }
-}
-
 impl fmt::Display for Error {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> std::result::Result<(), fmt::Error> {
         match *self {
@@ -242,7 +236,7 @@ fn read_file(name: &str) -> std::result::Result<String, std::io::Error> {
 pub fn parse_file(name: &str) -> Result<Sexp> {
     let s = try!(match read_file(name) {
         Ok(s) => Ok(s),
-        Err(x) => Err(format!("{:?}", x))
+        Err(x) => str_error(format!("{:?}", x))
     }); 
     parse_str(&s[..])
 }
