@@ -144,7 +144,7 @@ impl fmt::Display for Sexp {
     }
 }
 
-pub trait Formatter {
+trait Formatter {
     /// Called when serializing a '('.
     fn open<W>(&mut self, writer: &mut W) -> Result<()>
         where W: io::Write;
@@ -158,7 +158,7 @@ pub trait Formatter {
         where W: io::Write;
 }
 
-pub struct CompactFormatter;
+struct CompactFormatter;
 
 impl Formatter for CompactFormatter {
     fn open<W>(&mut self, writer: &mut W) -> Result<()>
@@ -183,7 +183,7 @@ impl Formatter for CompactFormatter {
 }
 
 
-pub struct Serializer<W, F=CompactFormatter> {
+struct Serializer<W, F=CompactFormatter> {
     writer: W,
     formatter: F,
 
@@ -196,7 +196,7 @@ pub struct Serializer<W, F=CompactFormatter> {
 impl<W> Serializer<W>
     where W: io::Write,
 {
-    pub fn new(writer: W) -> Self {
+    fn new(writer: W) -> Self {
         Serializer::with_formatter(writer, CompactFormatter)
     }
 }
@@ -205,7 +205,7 @@ impl<W, F> Serializer<W, F>
     where W: io::Write,
           F: Formatter,
 {
-    pub fn with_formatter(writer: W, formatter: F) -> Self {
+    fn with_formatter(writer: W, formatter: F) -> Self {
         Serializer {
             writer: writer,
             formatter: formatter,
@@ -214,7 +214,7 @@ impl<W, F> Serializer<W, F>
     }
 
     fn serialize_str(&mut self, value:&str) -> Result<()> {
-        if value.contains('(') || value.contains(' ') {
+        if value.contains('(') || value.contains(' ') || value.is_empty() {
             write!(&mut self.writer, "\"{}\"", value).map_err(From::from)
         } else {
             write!(&mut self.writer, "{}", value).map_err(From::from)
@@ -242,14 +242,6 @@ impl<W, F> Serializer<W, F>
     }
 }
 
-
-pub fn display_string(s:&str) -> String {
-    if s.contains('(') || s.contains(' ') || s.is_empty() {
-        format!("\"{}\"", s)
-    } else {
-        String::from(s)
-    }
-}
 
 pub fn parse_str(sexp: &str) -> Result<Sexp> {
     if sexp.is_empty() {
