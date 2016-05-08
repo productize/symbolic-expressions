@@ -144,6 +144,105 @@ impl fmt::Display for Sexp {
     }
 }
 
+pub trait Formatter {
+    /// Called when serializing a '('.
+    fn open<W>(&mut self, writer: &mut W) -> Result<()>
+        where W: io::Write;
+
+    /// Called when serializing a ' '.
+    fn space<W>(&mut self, writer: &mut W, first:bool) -> Result<()>
+        where W: io::Write;
+
+    /// Called when serializing a ')'.
+    fn close<W>(&mut self, writer: &mut W) -> Result<()>
+        where W: io::Write;
+}
+
+pub struct CompactFormatter;
+
+impl Formatter for CompactFormatter {
+    fn open<W>(&mut self, writer: &mut W) -> Result<()>
+        where W: io::Write
+    {
+        writer.write_all(b"(").map_err(From::from)
+    }
+    fn space<W>(&mut self, writer: &mut W, first:bool) -> Result<()>
+        where W: io::Write
+    {
+        if first {
+            Ok(())
+        } else {
+            writer.write_all(b" ").map_err(From::from)
+        }
+    }
+    fn close<W>(&mut self, writer: &mut W) -> Result<()>
+        where W: io::Write
+    {
+        writer.write_all(b")").map_err(From::from)
+    }
+}
+
+
+pub struct Serializer<W, F=CompactFormatter> {
+    writer: W,
+    formatter: F,
+
+    /// `first` is used to signify if we should print a comma when we are walking through a
+    /// sequence.
+    first: bool,
+}
+
+// dispatches only based on Formatter
+impl<W> Serializer<W>
+    where W: io::Write,
+{
+    pub fn new(writer: W) -> Self {
+        Serializer::with_formatter(writer, CompactFormatter)
+    }
+}
+
+impl<W, F> Serializer<W, F>
+    where W: io::Write,
+          F: Formatter,
+{
+    pub fn with_formatter(writer: W, formatter: F) -> Self {
+        Serializer {
+            writer: writer,
+            formatter: formatter,
+            first: false,
+        }
+    }
+
+    fn serialize_str(&mut self, value:&str) -> Result<()> {
+        if value.contains('(') || value.contains(' ') {
+            write!(&mut self.writer, "\"{}\"", value).map_err(From::from)
+        } else {
+            write!(&mut self.writer, "{}", value).map_err(From::from)
+        }
+    }
+
+    fn serialize(&mut self, value:&Sexp) -> Result<()> {
+        match *value {
+            Sexp::String(ref s) => {
+                self.serialize_str(s)
+            },
+            Sexp::List(ref list) => {
+                try!(self.formatter.open(&mut self.writer));
+                let mut first = true;
+                for v in list {
+                    try!(self.formatter.space(&mut self.writer, first));
+                    first = false;
+                    try!(self.serialize(v));
+                }
+                self.formatter.close(&mut self.writer)
+            },
+            Sexp::Empty => Ok(()),
+        }
+        
+    }
+}
+
+
 pub fn display_string(s:&str) -> String {
     if s.contains('(') || s.contains(' ') || s.is_empty() {
         format!("\"{}\"", s)
@@ -187,10 +286,8 @@ pub fn parse_file(name: &str) -> Result<Sexp> {
 pub fn to_writer<W>(writer: &mut W, value: &Sexp) -> Result<()>
     where W: io::Write
 {
-    //let mut ser = Serializer::new(writer);
-    //try!(value.serialize(&mut ser));
-    // TODO
-    Ok(())
+    let mut ser = Serializer::new(writer);
+    ser.serialize(value)
 }
 
 
@@ -286,13 +383,14 @@ mod tests {
     #[allow(dead_code)]
     fn check_parse_res(s: &str, o:&str) {
         let e = parse_str(s).unwrap();
-        let t = format!("{}", e);
+        let t = to_string(&e).unwrap();
         assert_eq!(o, t)
     }
+    
     #[allow(dead_code)]
     fn check_parse(s: &str) {
         let e = parse_str(s).unwrap();
-        let t = format!("{}", e);
+        let t = to_string(&e).unwrap();
         assert_eq!(s, t)
     }
 
