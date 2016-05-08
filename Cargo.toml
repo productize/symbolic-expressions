@@ -5,3 +5,4 @@ authors = ["Joost Damad <joost@productize.be>"]
 
 [dependencies]
 nom = "~1.2.0"
+clippy = "*"

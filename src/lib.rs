@@ -1,3 +1,6 @@
+#![feature(plugin)]
+#![plugin(clippy)]
+
 #[macro_use]
 extern crate nom;
 
@@ -22,7 +25,7 @@ pub struct Compact<'a> {
     what:&'a Sexp,
 }
 
-pub fn compact<'a>(e:&'a Sexp) -> Compact<'a> {
+pub fn compact(e:&Sexp) -> Compact {
     Compact { what:e }
 }
 
@@ -74,7 +77,7 @@ impl Sexp {
         let s = try!(self.string());
         match f64::from_str(&s) {
             Ok(f) => Ok(f),
-            _ => Err(format!("Error parsing float"))
+            _ => Err("Error parsing float".to_string())
         }
     }
 
@@ -82,7 +85,7 @@ impl Sexp {
         let s = try!(self.string());
         match i64::from_str(&s) {
             Ok(f) => Ok(f),
-            _ => Err(format!("Error parsing int"))
+            _ => Err("Error parsing int".to_string())
         }
     }
     
@@ -172,7 +175,7 @@ impl<'a> fmt::Display for Compact<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         match self.what.element {
             Element::String(ref s) => {
-                if s.contains("(") || s.contains(" ") {
+                if s.contains('(') || s.contains(' ') {
                     write!(f,"\"{}\"", s)
                 } else {
                     write!(f,"{}", s)
@@ -191,16 +194,16 @@ impl<'a> fmt::Display for Compact<'a> {
     }
 }
 
-pub fn display_string(s:&String) -> String {
-    if s.contains("(") || s.contains(" ") || s.len() == 0 {
+pub fn display_string(s:&str) -> String {
+    if s.contains('(') || s.contains(' ') || s.is_empty() {
         format!("\"{}\"", s)
     } else {
-        s.clone()
+        String::from(s)
     }
 }
 
 pub fn parse_str(sexp: &str) -> Result<Sexp, String> {
-    if sexp.len() == 0 {
+    if sexp.is_empty() {
         return Ok(Sexp::new_empty())
     }
     match parse_sexp(&sexp.as_bytes()[..]) {
@@ -209,7 +212,7 @@ pub fn parse_str(sexp: &str) -> Result<Sexp, String> {
             match err {
                 nom::Err::Position(kind,p) => 
                     Err(format!("parse error: {:?} |{}|", kind, str::from_utf8(p).unwrap())),
-                _ => Err(format!("parse error"))
+                _ => Err("parse error".to_string())
             }
         },
         nom::IResult::Incomplete(x) => Err(format!("incomplete: {:?}", x)),
