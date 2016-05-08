@@ -10,8 +10,8 @@ use std::fmt;
 use std::fs::File;
 use std::io::prelude::*;
 use std::io;
-use std::string::FromUtf8Error;
-use std::error;
+
+use error::*;
 
 // like Into trait but works from a ref avoiding consumption or expensive clone
 pub trait IntoSexp {
@@ -25,63 +25,6 @@ pub enum Sexp {
     Empty,
 }
 
-#[derive(Debug)]
-pub enum Error {
-    Other(String), // TODO: line/column error for parser
-    Io(io::Error),
-    FromUtf8(FromUtf8Error),
-}
-
-
-impl error::Error for Error {
-    
-    fn description(&self) -> &str {
-        match *self {
-            Error::Other(ref s) => s,
-            Error::Io(ref error) => error::Error::description(error),
-            Error::FromUtf8(ref error) => error.description(),
-        }
-    }
-
-    fn cause(&self) -> Option<&error::Error> {
-        match *self {
-            Error::Io(ref error) => Some(error),
-            Error::FromUtf8(ref error) => Some(error),
-            _ => None,
-        }
-    }
-}
-
-impl From<io::Error> for Error {
-    fn from(error: io::Error) -> Error {
-        Error::Io(error)
-    }
-}
-
-impl From<FromUtf8Error> for Error {
-    fn from(error: FromUtf8Error) -> Error {
-        Error::FromUtf8(error)
-    }
-}
-
-impl fmt::Display for Error {
-    fn fmt(&self, fmt: &mut fmt::Formatter) -> std::result::Result<(), fmt::Error> {
-        match *self {
-            Error::Other(ref s) => {
-                write!(fmt, "Error:{}", s)
-            }
-            Error::Io(ref error) => fmt::Display::fmt(error, fmt),
-            Error::FromUtf8(ref error) => fmt::Display::fmt(error, fmt),
-        }
-    }
-}
-
-pub type Result<T> = std::result::Result<T, Error>;
-
-fn str_error<T>(s:String) -> Result<T> {
-    Err(Error::Other(s))
-}
-    
 impl Sexp {
 
     pub fn new_empty() -> Sexp {
@@ -241,8 +184,24 @@ pub fn parse_file(name: &str) -> Result<Sexp> {
     parse_str(&s[..])
 }
 
-pub fn to_string(s:&Sexp) -> Result<String> {
-    let vec = vec![]; // to_vec(s);
+pub fn to_writer<W>(writer: &mut W, value: &Sexp) -> Result<()>
+    where W: io::Write
+{
+    //let mut ser = Serializer::new(writer);
+    //try!(value.serialize(&mut ser));
+    // TODO
+    Ok(())
+}
+
+
+pub fn to_vec(value:&Sexp) -> Result<Vec<u8>> {
+    let mut writer = Vec::with_capacity(128);
+    try!(to_writer(&mut writer, value));
+    Ok(writer)
+}
+
+pub fn to_string(value:&Sexp) -> Result<String> {
+    let vec = try!(to_vec(value));
     let string = try!(String::from_utf8(vec));
     Ok(string)
 }
@@ -442,4 +401,4 @@ world)")
     }
 }
 
-
+pub mod error;
