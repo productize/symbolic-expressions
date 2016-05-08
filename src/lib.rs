@@ -148,10 +148,6 @@ impl fmt::Display for Sexp {
 struct Serializer<W, F=CompactFormatter> {
     writer: W,
     formatter: F,
-
-    /// `first` is used to signify if we should print a comma when we are walking through a
-    /// sequence.
-    first: bool,
 }
 
 // dispatches only based on Formatter
@@ -171,7 +167,6 @@ impl<W, F> Serializer<W, F>
         Serializer {
             writer: writer,
             formatter: formatter,
-            first: false,
         }
     }
 
