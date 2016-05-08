@@ -129,8 +129,13 @@ impl fmt::Display for Sexp {
             },
             Sexp::List(ref v) => {
                 try!(write!(f, "("));
-                for x in v {
-                    try!(write!(f, "{}", x));
+                let l = v.len();
+                for (i,x) in v.iter().enumerate() {
+                    if i < l-1 {
+                        try!(write!(f, "{} ", x));
+                    } else {
+                        try!(write!(f, "{}", x));
+                    }
                 }
                 write!(f, ")")
             },
