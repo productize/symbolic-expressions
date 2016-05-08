@@ -10,6 +10,8 @@ use std::fmt;
 use std::fs::File;
 use std::io::prelude::*;
 use std::io;
+use std::string::FromUtf8Error;
+use std::error;
 
 // like Into trait but works from a ref avoiding consumption or expensive clone
 pub trait IntoSexp {
@@ -23,8 +25,69 @@ pub enum Sexp {
     Empty,
 }
 
-pub type ERes<T> = Result<T, String>;
+#[derive(Debug)]
+pub enum Error {
+    Other(String), // TODO: line/column error for parser
+    Io(io::Error),
+    FromUtf8(FromUtf8Error),
+}
 
+
+impl error::Error for Error {
+    
+    fn description(&self) -> &str {
+        match *self {
+            Error::Other(ref s) => s,
+            Error::Io(ref error) => error::Error::description(error),
+            Error::FromUtf8(ref error) => error.description(),
+        }
+    }
+
+    fn cause(&self) -> Option<&error::Error> {
+        match *self {
+            Error::Io(ref error) => Some(error),
+            Error::FromUtf8(ref error) => Some(error),
+            _ => None,
+        }
+    }
+}
+
+impl From<io::Error> for Error {
+    fn from(error: io::Error) -> Error {
+        Error::Io(error)
+    }
+}
+
+impl From<FromUtf8Error> for Error {
+    fn from(error: FromUtf8Error) -> Error {
+        Error::FromUtf8(error)
+    }
+}
+
+impl From<String> for Error {
+    fn from(error: String) -> Error {
+        Error::Other(error)
+    }
+}
+
+impl fmt::Display for Error {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> std::result::Result<(), fmt::Error> {
+        match *self {
+            Error::Other(ref s) => {
+                write!(fmt, "Error:{}", s)
+            }
+            Error::Io(ref error) => fmt::Display::fmt(error, fmt),
+            Error::FromUtf8(ref error) => fmt::Display::fmt(error, fmt),
+        }
+    }
+}
+
+pub type Result<T> = std::result::Result<T, Error>;
+
+fn str_error<T>(s:String) -> Result<T> {
+    Err(Error::Other(s))
+}
+    
 impl Sexp {
 
     pub fn new_empty() -> Sexp {
@@ -35,90 +98,90 @@ impl Sexp {
         t.into_sexp()
     }
     
-    pub fn list(&self) -> ERes<&Vec<Sexp> > {
+    pub fn list(&self) -> Result<&Vec<Sexp> > {
         match *self {
             Sexp::List(ref v) => Ok(v),
-            _ => Err(format!("not a list: {}", self))
+            _ => str_error(format!("not a list: {}", self))
         }
     }
     
-    pub fn string(&self) -> ERes<&String> {
+    pub fn string(&self) -> Result<&String> {
         match *self {
             Sexp::String(ref s) => Ok(s),
-            _ => Err(format!("not a string: {}", self))
+            _ => str_error(format!("not a string: {}", self))
         }
     }
 
-    pub fn f(&self) -> ERes<f64> {
+    pub fn f(&self) -> Result<f64> {
         let s = try!(self.string());
         match f64::from_str(&s) {
             Ok(f) => Ok(f),
-            _ => Err("Error parsing float".to_string())
+            _ => str_error("Error parsing float".to_string())
         }
     }
 
-    pub fn i(&self) -> ERes<i64> {
+    pub fn i(&self) -> Result<i64> {
         let s = try!(self.string());
         match i64::from_str(&s) {
             Ok(f) => Ok(f),
-            _ => Err("Error parsing int".to_string())
+            _ => str_error("Error parsing int".to_string())
         }
     }
     
-    pub fn list_name(&self) -> ERes<&String> {
+    pub fn list_name(&self) -> Result<&String> {
         let l = try!(self.list());
         let l = &l[..];
         let a = try!(l[0].string());
         Ok(a)
     }
 
-    pub fn slice_atom(&self, s:&str) -> ERes<&[Sexp]> {
+    pub fn slice_atom(&self, s:&str) -> Result<&[Sexp]> {
         let v = try!(self.list());
         let v2 =&v[..];
         let st = try!(v2[0].string());
         if st != s {
-            return Err(format!("list {} doesn't start with {}, but with {}", self, s, st))
+            return str_error(format!("list {} doesn't start with {}, but with {}", self, s, st))
         };
         Ok(&v[1..])
     }
 
-    pub fn named_value(&self, s:&str) -> ERes<&Sexp> {
+    pub fn named_value(&self, s:&str) -> Result<&Sexp> {
         let v = try!(self.list());
         if v.len() != 2 {
-            return Err(format!("list {} is not a named_value", s))
+            return str_error(format!("list {} is not a named_value", s))
         }
         let l = try!(self.slice_atom(s));
         Ok(&l[0])
     }
 
-    pub fn named_value_i(&self, s:&str) -> ERes<i64> {
+    pub fn named_value_i(&self, s:&str) -> Result<i64> {
         try!(self.named_value(s)).i()
     }
     
-    pub fn named_value_f(&self, s:&str) -> ERes<f64> {
+    pub fn named_value_f(&self, s:&str) -> Result<f64> {
         try!(self.named_value(s)).f()
     }
     
-    pub fn named_value_string(&self, s:&str) -> ERes<&String> {
+    pub fn named_value_string(&self, s:&str) -> Result<&String> {
         try!(self.named_value(s)).string()
     }
     
-    pub fn slice_atom_num(&self, s:&str, num:usize) -> ERes<&[Sexp]> {
+    pub fn slice_atom_num(&self, s:&str, num:usize) -> Result<&[Sexp]> {
         let v = try!(self.list());
         let v2 =&v[..];
         let st = try!(v2[0].string());
         if st != s {
-            return Err(format!("list doesn't start with {}, but with {}", s, st))
+            return str_error(format!("list doesn't start with {}, but with {}", s, st))
         };
         if v.len() != (num+1) {
-            return Err(format!("list ({}) doesn't have {} elements but {}", s, num, v.len()-1))
+            return str_error(format!("list ({}) doesn't have {} elements but {}", s, num, v.len()-1))
         }
         Ok(&v[1..])      
     }
 }
 
 impl fmt::Display for Sexp {
-    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> std::result::Result<(), fmt::Error> {
         match *self {
             Sexp::String(ref s) => {
                 if s.contains('(') || s.contains(' ') {
@@ -152,7 +215,7 @@ pub fn display_string(s:&str) -> String {
     }
 }
 
-pub fn parse_str(sexp: &str) -> Result<Sexp, String> {
+pub fn parse_str(sexp: &str) -> Result<Sexp> {
     if sexp.is_empty() {
         return Ok(Sexp::new_empty())
     }
@@ -161,27 +224,33 @@ pub fn parse_str(sexp: &str) -> Result<Sexp, String> {
         nom::IResult::Error(err) => {
             match err {
                 nom::Err::Position(kind,p) => 
-                    Err(format!("parse error: {:?} |{}|", kind, str::from_utf8(p).unwrap())),
-                _ => Err("parse error".to_string())
+                    str_error(format!("parse error: {:?} |{}|", kind, str::from_utf8(p).unwrap())),
+                _ => str_error("parse error".to_string())
             }
         },
-        nom::IResult::Incomplete(x) => Err(format!("incomplete: {:?}", x)),
+        nom::IResult::Incomplete(x) => str_error(format!("incomplete: {:?}", x)),
     }
 }
 
-fn read_file(name: &str) -> Result<String, std::io::Error> {
+fn read_file(name: &str) -> std::result::Result<String, std::io::Error> {
     let mut f = try!(File::open(name));
     let mut s = String::new();
     try!(f.read_to_string(&mut s));
     Ok(s)
 }
 
-pub fn parse_file(name: &str) -> ERes<Sexp> {
+pub fn parse_file(name: &str) -> Result<Sexp> {
     let s = try!(match read_file(name) {
         Ok(s) => Ok(s),
         Err(x) => Err(format!("{:?}", x))
     }); 
     parse_str(&s[..])
+}
+
+pub fn to_string(s:&Sexp) -> Result<String> {
+    let vec = vec![]; // to_vec(s);
+    let string = try!(String::from_utf8(vec));
+    Ok(string)
 }
 
 named!(parse_qstring<String>,
