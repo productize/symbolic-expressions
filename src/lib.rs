@@ -159,6 +159,18 @@ impl<W> Serializer<W>
     }
 }
 
+impl<W> Serializer<W, RulesFormatter>
+    where W: io::Write,
+{
+    fn new_rules(writer: W) -> Self {
+        Serializer::with_formatter(writer, RulesFormatter::new())
+    }
+    
+    fn new_kicad(writer: W) -> Self {
+        Serializer::with_formatter(writer, RulesFormatter::new_kicad())
+    }
+}
+
 impl<W, F> Serializer<W, F>
     where W: io::Write,
           F: Formatter,
@@ -244,10 +256,23 @@ pub fn to_writer<W>(writer: &mut W, value: &Sexp) -> Result<()>
     ser.serialize(value)
 }
 
+pub fn to_kicad_writer<W>(writer: &mut W, value: &Sexp) -> Result<()>
+    where W: io::Write
+{
+    let mut ser = Serializer::new_kicad(writer);
+    ser.serialize(value)
+}
+
 
 pub fn to_vec(value:&Sexp) -> Result<Vec<u8>> {
     let mut writer = Vec::with_capacity(128);
     try!(to_writer(&mut writer, value));
+    Ok(writer)
+}
+
+pub fn to_kicad_vec(value:&Sexp) -> Result<Vec<u8>> {
+    let mut writer = Vec::with_capacity(128);
+    try!(to_kicad_writer(&mut writer, value));
     Ok(writer)
 }
 
@@ -256,6 +281,13 @@ pub fn to_string(value:&Sexp) -> Result<String> {
     let string = try!(String::from_utf8(vec));
     Ok(string)
 }
+
+pub fn to_kicad_string(value:&Sexp) -> Result<String> {
+    let vec = try!(to_kicad_vec(value));
+    let string = try!(String::from_utf8(vec));
+    Ok(string)
+}
+
 
 named!(parse_qstring<String>,
        map_res!(
@@ -347,6 +379,13 @@ mod tests {
         let t = to_string(&e).unwrap();
         assert_eq!(s, t)
     }
+    
+    #[allow(dead_code)]
+    fn check_parse_kicad(s: &str) {
+        let e = parse_str(s).unwrap();
+        let t = to_kicad_string(&e).unwrap();
+        assert_eq!(s, t)
+    }
 
     #[allow(dead_code)]
     fn parse_fail(s: &str) {
@@ -415,6 +454,12 @@ mod tests {
 
     #[test]
     fn test_complex() { check_parse("(module SWITCH_3W_SIDE_MMP221-R (layer F.Cu) (descr \"\") (pad 1 thru_hole rect (size 1.2 1.2) (at -2.5 -1.6 0) (layers *.Cu *.Mask) (drill 0.8)) (pad 2 thru_hole rect (size 1.2 1.2) (at 0.0 -1.6 0) (layers *.Cu *.Mask) (drill 0.8)) (pad 3 thru_hole rect (size 1.2 1.2) (at 2.5 -1.6 0) (layers *.Cu *.Mask) (drill 0.8)) (pad 5 thru_hole rect (size 1.2 1.2) (at 0.0 1.6 0) (layers *.Cu *.Mask) (drill 0.8)) (pad 6 thru_hole rect (size 1.2 1.2) (at -2.5 1.6 0) (layers *.Cu *.Mask) (drill 0.8)) (pad 4 thru_hole rect (size 1.2 1.2) (at 2.5 1.6 0) (layers *.Cu *.Mask) (drill 0.8)) (fp_line (start -4.5 -1.75) (end 4.5 -1.75) (layer F.SilkS) (width 0.127)) (fp_line (start 4.5 -1.75) (end 4.5 1.75) (layer F.SilkS) (width 0.127)) (fp_line (start 4.5 1.75) (end -4.5 1.75) (layer F.SilkS) (width 0.127)) (fp_line (start -4.5 1.75) (end -4.5 -1.75) (layer F.SilkS) (width 0.127)))") }
+    
+    #[test]
+    fn test_kicad_1() {
+        check_parse_kicad("(module SILABS_EFM32_QFM24
+  (layer F.Cu))")
+    }
 
     #[test]
     fn test_multiline() {

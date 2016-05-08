@@ -1,4 +1,5 @@
 use std::io;
+use std::collections::HashMap;
 
 use Result;
 use Sexp;
@@ -38,12 +39,49 @@ impl Formatter for CompactFormatter {
     }
 }
 
-pub struct KicadFormatter;
+pub struct RulesFormatter {
+    indent:Vec<u8>,
+    indent_before:HashMap<&'static str, i64>,
+}
 
-impl Formatter for KicadFormatter {
+// TODO: get rid of kicad specifics in RulesFormatter
+
+impl RulesFormatter {
+
+    pub fn new() -> RulesFormatter {
+        let mut idb = HashMap::new();
+        RulesFormatter {
+            indent:vec![b' ',b' '], // two spaces
+            indent_before:idb,
+        }
+    }
+    
+    pub fn new_kicad() -> RulesFormatter {
+        let mut rf = RulesFormatter::new();
+        rf.indent_before.insert("layer", 1);
+        rf.indent_before.insert("desc", 1);
+        rf.indent_before.insert("fp_text", 1);
+        rf.indent_before.insert("fp_poly", 1);
+        rf.indent_before.insert("fp_line", 1);
+        rf.indent_before.insert("pad", 1);
+        rf
+    }
+}
+    
+    
+impl Formatter for RulesFormatter {
     fn open<W>(&mut self, writer: &mut W, value:&str) -> Result<()>
         where W: io::Write
     {
+        match self.indent_before.get(value) {
+            Some(&i) => {
+                try!(writer.write_all(b"\n"));
+                for _ in 0..i {
+                    try!(writer.write_all(&self.indent));
+                }
+            },
+            None => (),
+        }
         writer.write_all(b"(").map_err(From::from)
     }
     
