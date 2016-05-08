@@ -12,7 +12,7 @@ use std::io::prelude::*;
 use std::io;
 
 pub use error::*;
-use formatter::{Formatter,CompactFormatter};
+use formatter::*;
 
 // like Into trait but works from a ref avoiding consumption or expensive clone
 pub trait IntoSexp {
@@ -187,7 +187,7 @@ impl<W, F> Serializer<W, F>
                 try!(self.formatter.open(&mut self.writer));
                 let mut first = true;
                 for v in list {
-                    try!(self.formatter.space(&mut self.writer, first));
+                    try!(self.formatter.element(&mut self.writer, first, v));
                     first = false;
                     try!(self.serialize(v));
                 }
