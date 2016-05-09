@@ -1,3 +1,5 @@
+// (c) 2016 Productize SPRL <joost@productize.be>
+
 use std::fmt;
 use std::result;
 use std::str;

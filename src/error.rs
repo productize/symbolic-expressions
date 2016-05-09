@@ -1,3 +1,5 @@
+// (c) 2016 Productize SPRL <joost@productize.be>
+
 use std::string::FromUtf8Error;
 use std::error;
 use std::io;

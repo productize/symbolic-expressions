@@ -1,3 +1,5 @@
+// (c) 2016 Productize SPRL <joost@productize.be>
+
 use std::io;
 use std::collections::HashMap;
 

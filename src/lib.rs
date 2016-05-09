@@ -1,3 +1,5 @@
+// (c) 2015-2016 Productize SPRL <joost@productize.be>
+
 #![feature(plugin)]
 #![plugin(clippy)]
 
@@ -10,6 +12,7 @@ pub use sexp::*;
 mod error;
 mod formatter;
 mod sexp;
+
 pub mod parser;
 pub mod ser;
 

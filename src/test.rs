@@ -1,3 +1,5 @@
+// (c) 2016 Productize SPRL <joost@productize.be>
+
 use super::*;
 
 #[allow(dead_code)]

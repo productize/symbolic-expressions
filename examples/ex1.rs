@@ -1,4 +1,4 @@
-// (c) 2015 Joost Yervante Damad <joost@damad.be>
+// (c) 2015-2016 Productize SPRL <joost@productize.be>
 
 extern crate rustysexp;
 
