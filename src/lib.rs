@@ -1,7 +1,6 @@
 // (c) 2015-2016 Productize SPRL <joost@productize.be>
 
-#![feature(plugin)]
-#![plugin(clippy)]
+#![cfg_attr(feature = "nightly-testing", plugin(clippy))]
 
 #[macro_use]
 extern crate nom;

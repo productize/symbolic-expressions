@@ -2,7 +2,6 @@
 
 use std::fmt;
 use std::result;
-use std::str;
 use std::str::FromStr;
 
 use str_error;
