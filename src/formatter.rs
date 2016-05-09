@@ -5,8 +5,8 @@ use Result;
 use Sexp;
 
 pub trait Formatter {
-    /// Called when serializing a '(string'.
-    fn open<W>(&mut self, writer: &mut W, value:&str) -> Result<()>
+    /// Called when serializing a '('.
+    fn open<W>(&mut self, writer: &mut W, value:Option<&Sexp>) -> Result<()>
         where W: io::Write;
 
     /// Called when serializing a ' VAL'.
@@ -21,7 +21,7 @@ pub trait Formatter {
 pub struct CompactFormatter;
 
 impl Formatter for CompactFormatter {
-    fn open<W>(&mut self, writer: &mut W, _value:&str) -> Result<()>
+    fn open<W>(&mut self, writer: &mut W, _value:Option<&Sexp>) -> Result<()>
         where W: io::Write
     {
         writer.write_all(b"(").map_err(From::from)
@@ -72,13 +72,19 @@ impl RulesFormatter {
 }
 
 impl Formatter for RulesFormatter {
-    fn open<W>(&mut self, writer: &mut W, value:&str) -> Result<()>
+    fn open<W>(&mut self, writer: &mut W, value:Option<&Sexp>) -> Result<()>
         where W: io::Write
     {
-        if let Some(&i) = self.indent_before.get(value) {
-            try!(writer.write_all(b"\n"));
-            for _ in 0..i {
-                try!(writer.write_all(&self.indent));
+        // if first element is string and it has an indent setting
+        if let Some(ref sexp) = value {
+            if let Sexp::String(ref s) = **sexp {
+                let s:&str = &s;
+                if let Some(&i) = self.indent_before.get(s) {
+                    try!(writer.write_all(b"\n"));
+                    for _ in 0..i {
+                    try!(writer.write_all(&self.indent));
+                    }
+                }
             }
         }
         writer.write_all(b"(").map_err(From::from)

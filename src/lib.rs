@@ -199,15 +199,18 @@ impl<W, F> Serializer<W, F>
             },
             Sexp::List(ref list) => {
                 let mut first = true;
-                for v in list {
-                    if first {
-                        let s = try!(v.string());
-                        try!(self.formatter.open(&mut self.writer, s));
-                        try!(self.serialize(v));
-                        first = false;
-                    } else {
-                        try!(self.formatter.element(&mut self.writer, v));
-                        try!(self.serialize(v));
+                if list.is_empty() {
+                    try!(self.formatter.open(&mut self.writer, None));
+                } else {                   
+                    for v in list {
+                        if first {
+                            try!(self.formatter.open(&mut self.writer, Some(v)));
+                            try!(self.serialize(v));
+                            first = false;
+                        } else {
+                            try!(self.formatter.element(&mut self.writer, v));
+                            try!(self.serialize(v));
+                        }
                     }
                 }
                 self.formatter.close(&mut self.writer)
