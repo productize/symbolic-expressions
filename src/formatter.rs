@@ -92,7 +92,7 @@ impl Formatter for RulesFormatter {
         if let Sexp::List(ref l) = *value {
             if !l.is_empty() {
                 if let Sexp::String(ref s) = l[0] {
-                    let s2:&str = &s;
+                    let s2:&str = &s; // why needed?
                     if self.indent_before.contains_key(s2) {
                         return Ok(())
                     }
