@@ -21,12 +21,12 @@ pub trait Formatter {
 pub struct CompactFormatter;
 
 impl Formatter for CompactFormatter {
-    fn open<W>(&mut self, writer: &mut W, value:&str) -> Result<()>
+    fn open<W>(&mut self, writer: &mut W, _value:&str) -> Result<()>
         where W: io::Write
     {
         writer.write_all(b"(").map_err(From::from)
     }
-    fn element<W>(&mut self, writer: &mut W, value:&Sexp) -> Result<()>
+    fn element<W>(&mut self, writer: &mut W, _value:&Sexp) -> Result<()>
         where W: io::Write
     {
         writer.write_all(b" ").map_err(From::from)
@@ -44,20 +44,23 @@ pub struct RulesFormatter {
     indent_before:HashMap<&'static str, i64>,
 }
 
-// TODO: get rid of kicad specifics in RulesFormatter
-
-impl RulesFormatter {
-
-    pub fn new() -> RulesFormatter {
-        let mut idb = HashMap::new();
+impl Default for RulesFormatter {
+    fn default() -> Self {
+        let idb = HashMap::new();
         RulesFormatter {
             indent:vec![b' ',b' '], // two spaces
             indent_before:idb,
         }
     }
+}
     
+
+// TODO: get rid of kicad specifics in RulesFormatter
+
+impl RulesFormatter {
+
     pub fn new_kicad() -> RulesFormatter {
-        let mut rf = RulesFormatter::new();
+        let mut rf = RulesFormatter::default();
         rf.indent_before.insert("layer", 1);
         rf.indent_before.insert("desc", 1);
         rf.indent_before.insert("fp_text", 1);
@@ -67,20 +70,16 @@ impl RulesFormatter {
         rf
     }
 }
-    
-    
+
 impl Formatter for RulesFormatter {
     fn open<W>(&mut self, writer: &mut W, value:&str) -> Result<()>
         where W: io::Write
     {
-        match self.indent_before.get(value) {
-            Some(&i) => {
-                try!(writer.write_all(b"\n"));
-                for _ in 0..i {
-                    try!(writer.write_all(&self.indent));
-                }
-            },
-            None => (),
+        if let Some(&i) = self.indent_before.get(value) {
+            try!(writer.write_all(b"\n"));
+            for _ in 0..i {
+                try!(writer.write_all(&self.indent));
+            }
         }
         writer.write_all(b"(").map_err(From::from)
     }
@@ -88,6 +87,18 @@ impl Formatter for RulesFormatter {
     fn element<W>(&mut self, writer: &mut W, value:&Sexp) -> Result<()>
         where W: io::Write
     {
+        // if containing value is a list and it has indent_before
+        // don't put the space
+        if let Sexp::List(ref l) = *value {
+            if !l.is_empty() {
+                if let Sexp::String(ref s) = l[0] {
+                    let s2:&str = &s;
+                    if self.indent_before.contains_key(s2) {
+                        return Ok(())
+                    }
+                }
+            }
+        }
         writer.write_all(b" ").map_err(From::from)
     }
     

@@ -162,9 +162,11 @@ impl<W> Serializer<W>
 impl<W> Serializer<W, RulesFormatter>
     where W: io::Write,
 {
+    /* TODO
     fn new_rules(writer: W) -> Self {
         Serializer::with_formatter(writer, RulesFormatter::new())
     }
+     */
     
     fn new_kicad(writer: W) -> Self {
         Serializer::with_formatter(writer, RulesFormatter::new_kicad())
