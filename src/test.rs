@@ -1,8 +1,5 @@
 use super::*;
 
-use parser;
-use ser;
-
 #[allow(dead_code)]
 fn check_parse_res(s: &str, o:&str) {
     let e = parser::parse_str(s).unwrap();

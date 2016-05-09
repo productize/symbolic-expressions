@@ -1,11 +1,30 @@
 use std::str::FromStr;
 use std::str;
+use std::result;
+use std::io;
+use std::fs::File;
+use std::io::prelude::*;
 
 use nom;
 
 use Sexp;
 use str_error;
 use Result;
+
+fn read_file(name: &str) -> result::Result<String, io::Error> {
+    let mut f = try!(File::open(name));
+    let mut s = String::new();
+    try!(f.read_to_string(&mut s));
+    Ok(s)
+}
+
+pub fn parse_file(name: &str) -> Result<Sexp> {
+    let s = try!(match read_file(name) {
+        Ok(s) => Ok(s),
+        Err(x) => str_error(format!("{:?}", x))
+    }); 
+    parse_str(&s[..])
+}
 
 pub fn parse_str(sexp: &str) -> Result<Sexp> {
     if sexp.is_empty() {
