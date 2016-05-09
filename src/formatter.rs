@@ -67,6 +67,7 @@ impl RulesFormatter {
         rf.indent_before.insert("fp_poly", 1);
         rf.indent_before.insert("fp_line", 1);
         rf.indent_before.insert("pad", 1);
+        rf.indent_before.insert("general", 1);
         rf
     }
 }

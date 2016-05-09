@@ -1,29 +1,39 @@
 use super::*;
 
+use parser;
+
 #[allow(dead_code)]
 fn check_parse_res(s: &str, o:&str) {
-    let e = parse_str(s).unwrap();
+    let e = parser::parse_str(s).unwrap();
     let t = to_string(&e).unwrap();
     assert_eq!(o, t)
 }
 
 #[allow(dead_code)]
 fn check_parse(s: &str) {
-    let e = parse_str(s).unwrap();
+    let e = parser::parse_str(s).unwrap();
     let t = to_string(&e).unwrap();
     assert_eq!(s, t)
 }
 
 #[allow(dead_code)]
 fn check_parse_kicad(s: &str) {
-    let e = parse_str(s).unwrap();
+    let e = parser::parse_str(s).unwrap();
     let t = to_kicad_string(&e).unwrap();
     assert_eq!(s, t)
 }
 
+/*
+#[allow(dead_code)]
+fn check_parse_kicad(s: &str) {
+    let e = parser::parse_str(s).unwrap();
+    let t = to_kicad_string(&e).unwrap();
+    assert_eq!(s, t)
+}*/
+
 #[allow(dead_code)]
 fn parse_fail(s: &str) {
-    parse_str(s).unwrap();
+    parser::parse_str(s).unwrap();
 }
 
 #[test]
@@ -124,9 +134,7 @@ world)")
 
 #[test]
 fn test_fail_pcb() {
-        check_parse("\
+        check_parse_kicad("\
 (kicad_pcb (version 4) (host pcbnew \"(2015-05-31 BZR 5692)-product\")
-  (general
-  )
-)")
+  (general))")
 }
