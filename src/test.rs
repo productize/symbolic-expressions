@@ -1,6 +1,7 @@
 // (c) 2016 Productize SPRL <joost@productize.be>
 
 use super::*;
+use ::formatter;
 
 #[allow(dead_code)]
 fn check_parse_res(s: &str, o:&str) {
@@ -19,21 +20,34 @@ fn check_parse(s: &str) {
 #[allow(dead_code)]
 fn check_parse_kicad(s: &str) {
     let e = parser::parse_str(s).unwrap();
-    let t = ser::to_kicad_string(&e).unwrap();
+    let t = ser::to_rules_string(&e, kicad_test_rules()).unwrap();
     assert_eq!(s, t)
 }
 
-/*
 #[allow(dead_code)]
-fn check_parse_kicad(s: &str) {
+fn check_parse_rules(s: &str, rules:formatter::Rules) {
     let e = parser::parse_str(s).unwrap();
-    let t = ser::to_kicad_string(&e).unwrap();
+    let t = ser::to_rules_string(&e, rules).unwrap();
     assert_eq!(s, t)
-}*/
+}
+
 
 #[allow(dead_code)]
 fn parse_fail(s: &str) {
     parser::parse_str(s).unwrap();
+}
+
+#[allow(dead_code)]
+pub fn kicad_test_rules() -> formatter::Rules {
+    let mut rf = formatter::Rules::new();
+    rf.insert("layer", 1);
+    rf.insert("desc", 1);
+    rf.insert("fp_text", 1);
+    rf.insert("fp_poly", 1);
+    rf.insert("fp_line", 1);
+    rf.insert("pad", 1);
+    rf.insert("general", 1);
+    rf
 }
 
 #[test]
@@ -107,29 +121,21 @@ fn test_kicad_1() {
 
 #[test]
 fn test_multiline() {
-    check_parse("\
+    let mut rules = formatter::Rules::new();
+    rules.insert("foo",1);
+    rules.insert("mars",1);
+    check_parse_rules("\
 (hello \"test it\"
-    (foo bar)
-    (mars venus)
-)
-")
-}
-
-#[test]
-fn test_multiline2() {
-    check_parse("\
-(hello world
-  mad
-    (world)
-  not)")
+  (foo bar)
+  (mars venus))", rules)
 }
 
 #[test]
 fn test_multiline_two_empty() {
-    check_parse("\
+    check_parse_res("\
 (hello
 
-world)")
+world)", "(hello world)")
 }
 
 #[test]

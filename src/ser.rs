@@ -24,14 +24,8 @@ impl<W> Serializer<W>
 impl<W> Serializer<W, RulesFormatter>
     where W: io::Write,
 {
-    /* TODO
-    fn new_rules(writer: W) -> Self {
-        Serializer::with_formatter(writer, RulesFormatter::new())
-    }
-     */
-    
-    fn new_kicad(writer: W) -> Self {
-        Serializer::with_formatter(writer, RulesFormatter::new_kicad())
+    fn new_rules(writer: W, rules:Rules) -> Self {
+        Serializer::with_formatter(writer, RulesFormatter::new(rules))
     }
 }
 
@@ -90,10 +84,10 @@ pub fn to_writer<W>(writer: &mut W, value: &Sexp) -> Result<()>
     ser.serialize(value)
 }
 
-pub fn to_kicad_writer<W>(writer: &mut W, value: &Sexp) -> Result<()>
+pub fn to_rules_writer<W>(writer: &mut W, rules:Rules, value: &Sexp) -> Result<()>
     where W: io::Write
 {
-    let mut ser = Serializer::new_kicad(writer);
+    let mut ser = Serializer::new_rules(writer, rules);
     ser.serialize(value)
 }
 
@@ -103,9 +97,9 @@ pub fn to_vec(value:&Sexp) -> Result<Vec<u8>> {
     Ok(writer)
 }
 
-pub fn to_kicad_vec(value:&Sexp) -> Result<Vec<u8>> {
+pub fn to_rules_vec(value:&Sexp, rules:Rules) -> Result<Vec<u8>> {
     let mut writer = Vec::with_capacity(128);
-    try!(to_kicad_writer(&mut writer, value));
+    try!(to_rules_writer(&mut writer, rules, value));
     Ok(writer)
 }
 
@@ -115,8 +109,8 @@ pub fn to_string(value:&Sexp) -> Result<String> {
     Ok(string)
 }
 
-pub fn to_kicad_string(value:&Sexp) -> Result<String> {
-    let vec = try!(to_kicad_vec(value));
+pub fn to_rules_string(value:&Sexp, rules:Rules) -> Result<String> {
+    let vec = try!(to_rules_vec(value, rules));
     let string = try!(String::from_utf8(vec));
     Ok(string)
 }

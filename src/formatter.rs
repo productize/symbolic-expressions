@@ -41,9 +41,11 @@ impl Formatter for CompactFormatter {
     }
 }
 
+pub type Rules = HashMap<&'static str, i64>;
+
 pub struct RulesFormatter {
     indent:Vec<u8>,
-    indent_before:HashMap<&'static str, i64>,
+    indent_before:Rules,
 }
 
 impl Default for RulesFormatter {
@@ -56,21 +58,13 @@ impl Default for RulesFormatter {
     }
 }
     
-
-// TODO: get rid of kicad specifics in RulesFormatter
-
 impl RulesFormatter {
 
-    pub fn new_kicad() -> RulesFormatter {
-        let mut rf = RulesFormatter::default();
-        rf.indent_before.insert("layer", 1);
-        rf.indent_before.insert("desc", 1);
-        rf.indent_before.insert("fp_text", 1);
-        rf.indent_before.insert("fp_poly", 1);
-        rf.indent_before.insert("fp_line", 1);
-        rf.indent_before.insert("pad", 1);
-        rf.indent_before.insert("general", 1);
-        rf
+    pub fn new(indent_before:Rules) -> RulesFormatter {
+        RulesFormatter {
+            indent:vec![b' ',b' '], // two spaces
+            indent_before:indent_before,
+        }
     }
 }
 
