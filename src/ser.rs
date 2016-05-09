@@ -5,7 +5,7 @@ use formatter::*;
 use Sexp;
 use Result;
 
-pub struct Serializer<W, F=CompactFormatter> {
+struct Serializer<W, F=CompactFormatter> {
     writer: W,
     formatter: F,
 }
@@ -14,7 +14,7 @@ pub struct Serializer<W, F=CompactFormatter> {
 impl<W> Serializer<W>
     where W: io::Write,
 {
-    pub fn new(writer: W) -> Self {
+    fn new(writer: W) -> Self {
         Serializer::with_formatter(writer, CompactFormatter)
     }
 }
@@ -28,7 +28,7 @@ impl<W> Serializer<W, RulesFormatter>
     }
      */
     
-    pub fn new_kicad(writer: W) -> Self {
+    fn new_kicad(writer: W) -> Self {
         Serializer::with_formatter(writer, RulesFormatter::new_kicad())
     }
 }
@@ -52,7 +52,7 @@ impl<W, F> Serializer<W, F>
         }
     }
 
-    pub fn serialize(&mut self, value:&Sexp) -> Result<()> {
+    fn serialize(&mut self, value:&Sexp) -> Result<()> {
         match *value {
             Sexp::String(ref s) => {
                 self.serialize_str(s)
@@ -79,4 +79,42 @@ impl<W, F> Serializer<W, F>
         }
         
     }
+}
+
+pub fn to_writer<W>(writer: &mut W, value: &Sexp) -> Result<()>
+    where W: io::Write
+{
+    let mut ser = Serializer::new(writer);
+    ser.serialize(value)
+}
+
+pub fn to_kicad_writer<W>(writer: &mut W, value: &Sexp) -> Result<()>
+    where W: io::Write
+{
+    let mut ser = Serializer::new_kicad(writer);
+    ser.serialize(value)
+}
+
+pub fn to_vec(value:&Sexp) -> Result<Vec<u8>> {
+    let mut writer = Vec::with_capacity(128);
+    try!(to_writer(&mut writer, value));
+    Ok(writer)
+}
+
+pub fn to_kicad_vec(value:&Sexp) -> Result<Vec<u8>> {
+    let mut writer = Vec::with_capacity(128);
+    try!(to_kicad_writer(&mut writer, value));
+    Ok(writer)
+}
+
+pub fn to_string(value:&Sexp) -> Result<String> {
+    let vec = try!(to_vec(value));
+    let string = try!(String::from_utf8(vec));
+    Ok(string)
+}
+
+pub fn to_kicad_string(value:&Sexp) -> Result<String> {
+    let vec = try!(to_kicad_vec(value));
+    let string = try!(String::from_utf8(vec));
+    Ok(string)
 }

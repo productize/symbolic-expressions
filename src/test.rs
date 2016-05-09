@@ -1,25 +1,26 @@
 use super::*;
 
 use parser;
+use ser;
 
 #[allow(dead_code)]
 fn check_parse_res(s: &str, o:&str) {
     let e = parser::parse_str(s).unwrap();
-    let t = to_string(&e).unwrap();
+    let t = ser::to_string(&e).unwrap();
     assert_eq!(o, t)
 }
 
 #[allow(dead_code)]
 fn check_parse(s: &str) {
     let e = parser::parse_str(s).unwrap();
-    let t = to_string(&e).unwrap();
+    let t = ser::to_string(&e).unwrap();
     assert_eq!(s, t)
 }
 
 #[allow(dead_code)]
 fn check_parse_kicad(s: &str) {
     let e = parser::parse_str(s).unwrap();
-    let t = to_kicad_string(&e).unwrap();
+    let t = ser::to_kicad_string(&e).unwrap();
     assert_eq!(s, t)
 }
 
@@ -27,7 +28,7 @@ fn check_parse_kicad(s: &str) {
 #[allow(dead_code)]
 fn check_parse_kicad(s: &str) {
     let e = parser::parse_str(s).unwrap();
-    let t = to_kicad_string(&e).unwrap();
+    let t = ser::to_kicad_string(&e).unwrap();
     assert_eq!(s, t)
 }*/
 
