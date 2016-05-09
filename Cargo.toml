@@ -1,8 +1,15 @@
 [package]
-name = "rustysexp"
-version = "0.3.4"
+name = "symbolic-expressions"
+version = "0.3.5"
 authors = ["Joost Damad <joost@productize.be>"]
+license = "MIT"
+description = "A symbolic-expression parser/writer"
+repository = "https://github.com/productize/rustys-exp"
+
+[features]
+nightly = []
+nightly-testing = ["clippy", "nightly"]
 
 [dependencies]
 nom = "~1.2.0"
-clippy = "*"
+clippy = { version = "*", optional = true }
