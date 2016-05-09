@@ -12,7 +12,6 @@ use std::io::prelude::*;
 use std::io;
 
 pub use error::*;
-use formatter::*;
 
 // like Into trait but works from a ref avoiding consumption or expensive clone
 pub trait IntoSexp {
@@ -145,82 +144,6 @@ impl fmt::Display for Sexp {
     }
 }
 
-struct Serializer<W, F=CompactFormatter> {
-    writer: W,
-    formatter: F,
-}
-
-// dispatches only based on Formatter
-impl<W> Serializer<W>
-    where W: io::Write,
-{
-    fn new(writer: W) -> Self {
-        Serializer::with_formatter(writer, CompactFormatter)
-    }
-}
-
-impl<W> Serializer<W, RulesFormatter>
-    where W: io::Write,
-{
-    /* TODO
-    fn new_rules(writer: W) -> Self {
-        Serializer::with_formatter(writer, RulesFormatter::new())
-    }
-     */
-    
-    fn new_kicad(writer: W) -> Self {
-        Serializer::with_formatter(writer, RulesFormatter::new_kicad())
-    }
-}
-
-impl<W, F> Serializer<W, F>
-    where W: io::Write,
-          F: Formatter,
-{
-    fn with_formatter(writer: W, formatter: F) -> Self {
-        Serializer {
-            writer: writer,
-            formatter: formatter,
-        }
-    }
-
-    fn serialize_str(&mut self, value:&str) -> Result<()> {
-        if value.contains('(') || value.contains(' ') || value.is_empty() {
-            write!(&mut self.writer, "\"{}\"", value).map_err(From::from)
-        } else {
-            write!(&mut self.writer, "{}", value).map_err(From::from)
-        }
-    }
-
-    fn serialize(&mut self, value:&Sexp) -> Result<()> {
-        match *value {
-            Sexp::String(ref s) => {
-                self.serialize_str(s)
-            },
-            Sexp::List(ref list) => {
-                let mut first = true;
-                if list.is_empty() {
-                    try!(self.formatter.open(&mut self.writer, None));
-                } else {                   
-                    for v in list {
-                        if first {
-                            try!(self.formatter.open(&mut self.writer, Some(v)));
-                            try!(self.serialize(v));
-                            first = false;
-                        } else {
-                            try!(self.formatter.element(&mut self.writer, v));
-                            try!(self.serialize(v));
-                        }
-                    }
-                }
-                self.formatter.close(&mut self.writer)
-            },
-            Sexp::Empty => Ok(()),
-        }
-        
-    }
-}
-
 fn read_file(name: &str) -> std::result::Result<String, std::io::Error> {
     let mut f = try!(File::open(name));
     let mut s = String::new();
@@ -239,14 +162,14 @@ pub fn parse_file(name: &str) -> Result<Sexp> {
 pub fn to_writer<W>(writer: &mut W, value: &Sexp) -> Result<()>
     where W: io::Write
 {
-    let mut ser = Serializer::new(writer);
+    let mut ser = ser::Serializer::new(writer);
     ser.serialize(value)
 }
 
 pub fn to_kicad_writer<W>(writer: &mut W, value: &Sexp) -> Result<()>
     where W: io::Write
 {
-    let mut ser = Serializer::new_kicad(writer);
+    let mut ser = ser::Serializer::new_kicad(writer);
     ser.serialize(value)
 }
 
@@ -279,6 +202,7 @@ pub fn to_kicad_string(value:&Sexp) -> Result<String> {
 mod error;
 mod formatter;
 mod parser;
+mod ser;
 
 #[cfg(test)]
 mod test;
