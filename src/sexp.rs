@@ -19,8 +19,24 @@ pub enum Sexp {
     Empty,
 }
 
+/*
+
+Following the KiCad file formats specification chapter 4.4 - Identifiers and Strings:
+A string may not contain an actual newline or carriage return, but it may use an escape sequence to encode a
+newline, such as \n.
+If a string has any of the following conditions, then it must be quoted with a leading and trailing double quote
+character, otherwise it is acceptable to not quote the string:
+1. has one or more of the following 4 separator bytes: ASCII space, tab, '(', or ')'.
+2. has one or more of the following bytes: '%', '{', or '}'.
+3. has a length of zero bytes, and you need a place holder for the field, then use "".
+4. includes a byte of '-', and this byte is not in the first position of the string.
+*/
+
 pub fn encode_string(s:&str) -> String {
-    if s.contains('(') || s.contains(' ') {
+    fn rule_4(s:&str) -> bool {
+        s.contains('-') && s.len() > 1 && s.as_bytes()[0] != 45
+    }
+    if s.contains('(') || s.contains(' ') || s.contains(')') || s.contains('\t') || s.contains('{') || s.contains('}') || s.contains('}') || s.contains('%') || s.is_empty() || rule_4(s) {
         format!("\"{}\"", s)
     } else {
         String::from(s)
