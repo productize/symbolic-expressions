@@ -19,6 +19,14 @@ pub enum Sexp {
     Empty,
 }
 
+pub fn encode_string(s:&str) -> String {
+    if s.contains('(') || s.contains(' ') {
+        format!("\"{}\"", s)
+    } else {
+        String::from(s)
+    }
+}
+
 impl Sexp {
 
     pub fn new_empty() -> Sexp {
@@ -115,11 +123,7 @@ impl fmt::Display for Sexp {
     fn fmt(&self, f: &mut fmt::Formatter) -> result::Result<(), fmt::Error> {
         match *self {
             Sexp::String(ref s) => {
-                if s.contains('(') || s.contains(' ') {
-                    write!(f,"\"{}\"", s)
-                } else {
-                    write!(f,"{}", s)
-                }
+                write!(f, "{}", encode_string(s))
             },
             Sexp::List(ref v) => {
                 try!(write!(f, "("));

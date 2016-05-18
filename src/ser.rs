@@ -6,6 +6,7 @@ use formatter::*;
 
 use Sexp;
 use Result;
+use encode_string;
 
 struct Serializer<W, F=CompactFormatter> {
     writer: W,
@@ -41,11 +42,7 @@ impl<W, F> Serializer<W, F>
     }
 
     fn serialize_str(&mut self, value:&str) -> Result<()> {
-        if value.contains('(') || value.contains(' ') || value.is_empty() {
-            write!(&mut self.writer, "\"{}\"", value).map_err(From::from)
-        } else {
-            write!(&mut self.writer, "{}", value).map_err(From::from)
-        }
+        write!(&mut self.writer, "{}", encode_string(value)).map_err(From::from)
     }
 
     fn serialize(&mut self, value:&Sexp) -> Result<()> {
