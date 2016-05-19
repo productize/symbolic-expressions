@@ -36,8 +36,9 @@ pub fn parse_str(sexp: &str) -> Result<Sexp> {
         nom::IResult::Done(_, c) => Ok(c),
         nom::IResult::Error(err) => {
             match err {
-                nom::Err::Position(kind,p) => 
-                    str_error(format!("parse error: {:?} |{}|", kind, str::from_utf8(p).unwrap())),
+                nom::Err::Position(kind,p) => {
+                    str_error(format!("parse error: {:?} |{}|", kind, str::from_utf8(p).unwrap()))
+                },
                 _ => str_error("parse error".to_string())
             }
         },
