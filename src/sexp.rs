@@ -56,6 +56,15 @@ impl Sexp {
     pub fn new_list(v:Vec<Sexp>) -> Sexp {
         Sexp::List(v)
     }
+    
+    pub fn new_named_list<F>(name:&str, fill:F) -> Sexp
+        where F:Fn(&mut Vec<Sexp>)
+    {
+        let mut v = vec![];
+        v.push(Sexp::new_string(name));
+        fill(&mut v);
+        Sexp::List(v)
+    }
 
     pub fn new_named<T>(name:&str, value:T) -> Sexp where T:fmt::Display {
         let mut v = vec![];
