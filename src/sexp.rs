@@ -49,6 +49,14 @@ impl Sexp {
         Sexp::Empty
     }
 
+    pub fn new_string(s:&str) -> Sexp {
+        Sexp::String(s.to_string())
+    }
+
+    pub fn new_list(v:Vec<Sexp>) -> Sexp {
+        Sexp::List(v)
+    }
+
     pub fn from<T:IntoSexp>(t:&T) -> Sexp {
         t.into_sexp()
     }
