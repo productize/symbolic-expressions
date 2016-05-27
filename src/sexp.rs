@@ -57,7 +57,7 @@ impl Sexp {
         Sexp::List(v)
     }
 
-    pub fn new_named(name:&str, value:&str) -> Sexp {
+    pub fn new_named<T>(name:&str, value:T) -> Sexp where T:fmt::Display {
         let v = vec![Sexp::new_string(name), Sexp::new_string(value)];
         Sexp::List(v)
     }
