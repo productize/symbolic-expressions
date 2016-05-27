@@ -1,5 +1,5 @@
 [package]
-name = "symbolic-expressions"
+name = "symbolic_expressions"
 version = "0.3.9"
 authors = ["Joost Damad <joost@productize.be>"]
 license = "MIT"
