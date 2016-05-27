@@ -64,7 +64,7 @@ impl Sexp {
         Sexp::List(v)
     }
     
-    pub fn new_named_sexp<T>(name:&str, value:T) -> Sexp where T:IntoSexp {
+    pub fn new_named_sexp<T>(name:&str, value:&T) -> Sexp where T:IntoSexp {
         let mut v = vec![];
         v.push(Sexp::new_string(name));
         v.push(value.into_sexp());
