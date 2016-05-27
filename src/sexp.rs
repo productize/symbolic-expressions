@@ -57,6 +57,11 @@ impl Sexp {
         Sexp::List(v)
     }
 
+    pub fn new_named(name:&str, value:&str) -> Sexp {
+        let v = vec![Sexp::new_string(name), Sexp::new_string(value)];
+        Sexp::List(v)
+    }
+
     pub fn from<T:IntoSexp>(t:&T) -> Sexp {
         t.into_sexp()
     }
