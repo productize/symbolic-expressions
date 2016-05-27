@@ -20,14 +20,14 @@ fn check_parse(s: &str) {
 #[allow(dead_code)]
 fn check_parse_kicad(s: &str) {
     let e = parser::parse_str(s).unwrap();
-    let t = ser::to_rules_string(&e, kicad_test_rules()).unwrap();
+    let t = ser::to_string_with_rules(&e, kicad_test_rules()).unwrap();
     assert_eq!(s, t)
 }
 
 #[allow(dead_code)]
 fn check_parse_rules(s: &str, rules:formatter::Rules) {
     let e = parser::parse_str(s).unwrap();
-    let t = ser::to_rules_string(&e, rules).unwrap();
+    let t = ser::to_string_with_rules(&e, rules).unwrap();
     assert_eq!(s, t)
 }
 
