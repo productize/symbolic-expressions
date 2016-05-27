@@ -49,8 +49,8 @@ impl Sexp {
         Sexp::Empty
     }
 
-    pub fn new_string(s:&str) -> Sexp {
-        Sexp::String(s.to_string())
+    pub fn new_string<T>(s:T) -> Sexp where T:fmt::Display {
+        Sexp::String(format!("{}", s))
     }
 
     pub fn new_list(v:Vec<Sexp>) -> Sexp {
