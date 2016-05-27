@@ -81,7 +81,7 @@ pub fn to_writer<W>(writer: &mut W, value: &Sexp) -> Result<()>
     ser.serialize(value)
 }
 
-pub fn to_rules_writer<W>(writer: &mut W, rules:Rules, value: &Sexp) -> Result<()>
+pub fn to_writer_with_rules<W>(writer: &mut W, rules:Rules, value: &Sexp) -> Result<()>
     where W: io::Write
 {
     let mut ser = Serializer::new_rules(writer, rules);
@@ -94,9 +94,9 @@ pub fn to_vec(value:&Sexp) -> Result<Vec<u8>> {
     Ok(writer)
 }
 
-pub fn to_rules_vec(value:&Sexp, rules:Rules) -> Result<Vec<u8>> {
+pub fn to_vec_with_rules(value:&Sexp, rules:Rules) -> Result<Vec<u8>> {
     let mut writer = Vec::with_capacity(128);
-    try!(to_rules_writer(&mut writer, rules, value));
+    try!(to_writer_with_rules(&mut writer, rules, value));
     Ok(writer)
 }
 
@@ -106,8 +106,8 @@ pub fn to_string(value:&Sexp) -> Result<String> {
     Ok(string)
 }
 
-pub fn to_rules_string(value:&Sexp, rules:Rules) -> Result<String> {
-    let vec = try!(to_rules_vec(value, rules));
+pub fn to_string_with_rules(value:&Sexp, rules:Rules) -> Result<String> {
+    let vec = try!(to_vec_with_rules(value, rules));
     let string = try!(String::from_utf8(vec));
     Ok(string)
 }

@@ -75,7 +75,7 @@ impl Formatter for RulesFormatter {
         // if first element is string and it has an indent setting
         if let Some(ref sexp) = value {
             if let Sexp::String(ref s) = **sexp {
-                let s:&str = &s;
+                let s:&str = s;
                 if let Some(&i) = self.indent_before.get(s) {
                     try!(writer.write_all(b"\n"));
                     for _ in 0..i {
@@ -95,8 +95,8 @@ impl Formatter for RulesFormatter {
         if let Sexp::List(ref l) = *value {
             if !l.is_empty() {
                 if let Sexp::String(ref s) = l[0] {
-                    let s2:&str = &s; // why needed?
-                    if self.indent_before.contains_key(s2) {
+                    let s:&str = s; // why needed?
+                    if self.indent_before.contains_key(s) {
                         return Ok(())
                     }
                 }

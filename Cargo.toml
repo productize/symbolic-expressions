@@ -8,8 +8,7 @@ repository = "https://github.com/productize/symbolic-expressions"
 keywords = ["sexp","s-exp","symbolic","kicad"]
 
 [features]
-nightly = []
-nightly-testing = ["clippy", "nightly"]
+use_clippy = ["clippy"]
 
 [dependencies]
 nom = "~1.2.0"

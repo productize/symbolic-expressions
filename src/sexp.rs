@@ -69,7 +69,7 @@ impl Sexp {
 
     pub fn f(&self) -> Result<f64> {
         let s = try!(self.string());
-        match f64::from_str(&s) {
+        match f64::from_str(s) {
             Ok(f) => Ok(f),
             _ => str_error("Error parsing float".to_string())
         }
@@ -77,7 +77,7 @@ impl Sexp {
 
     pub fn i(&self) -> Result<i64> {
         let s = try!(self.string());
-        match i64::from_str(&s) {
+        match i64::from_str(s) {
             Ok(f) => Ok(f),
             _ => str_error("Error parsing int".to_string())
         }
