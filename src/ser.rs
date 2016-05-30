@@ -81,7 +81,7 @@ pub fn to_writer<W>(writer: &mut W, value: &Sexp) -> Result<()>
     ser.serialize(value)
 }
 
-pub fn to_writer_with_rules<W>(writer: &mut W, rules:Rules, value: &Sexp) -> Result<()>
+pub fn to_writer_with_rules<W>(writer: &mut W, rules:Rules, value:&Sexp) -> Result<()>
     where W: io::Write
 {
     let mut ser = Serializer::new_rules(writer, rules);
