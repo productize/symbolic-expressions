@@ -16,5 +16,7 @@ mod sexp;
 pub mod parser;
 pub mod ser;
 
+pub use formatter::Rules;
+
 #[cfg(test)]
 mod test;
