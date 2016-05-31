@@ -17,6 +17,7 @@ pub mod parser;
 pub mod ser;
 
 pub use formatter::Rules;
+pub use formatter::Formatter;
 
 #[cfg(test)]
 mod test;
