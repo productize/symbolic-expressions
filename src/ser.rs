@@ -81,6 +81,13 @@ pub fn to_writer<W>(writer: &mut W, value: &Sexp) -> Result<()>
     ser.serialize(value)
 }
 
+pub fn to_writer_with_formatter<W,F>(writer: &mut W, formatter:F, value: &Sexp) -> Result<()>
+    where W: io::Write, F:Formatter
+{
+    let mut ser = Serializer::with_formatter(writer, formatter);
+    ser.serialize(value)
+}
+
 pub fn to_writer_with_rules<W>(writer: &mut W, rules:Rules, value:&Sexp) -> Result<()>
     where W: io::Write
 {
@@ -100,6 +107,14 @@ pub fn to_vec_with_rules(value:&Sexp, rules:Rules) -> Result<Vec<u8>> {
     Ok(writer)
 }
 
+pub fn to_vec_with_formatter<F>(value:&Sexp, formatter:F) -> Result<Vec<u8>>
+    where F:Formatter
+{
+    let mut writer = Vec::with_capacity(128);
+    try!(to_writer_with_formatter(&mut writer, formatter, value));
+    Ok(writer)
+}
+
 pub fn to_string(value:&Sexp) -> Result<String> {
     let vec = try!(to_vec(value));
     let string = try!(String::from_utf8(vec));
@@ -108,6 +123,14 @@ pub fn to_string(value:&Sexp) -> Result<String> {
 
 pub fn to_string_with_rules(value:&Sexp, rules:Rules) -> Result<String> {
     let vec = try!(to_vec_with_rules(value, rules));
+    let string = try!(String::from_utf8(vec));
+    Ok(string)
+}
+
+pub fn to_string_with_formatter<F>(value:&Sexp, formatter:F) -> Result<String>
+    where F:Formatter
+{
+    let vec = try!(to_vec_with_formatter(value, formatter));
     let string = try!(String::from_utf8(vec));
     Ok(string)
 }
