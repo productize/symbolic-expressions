@@ -32,11 +32,16 @@ character, otherwise it is acceptable to not quote the string:
 4. includes a byte of '-', and this byte is not in the first position of the string.
 */
 
+/* Joost remark: kicad no longer seems to follow Rule 4. 
+   so we don't either */
+
+
 pub fn encode_string(s:&str) -> String {
+    /*
     fn rule_4(s:&str) -> bool {
         s.contains('-') && s.len() > 1 && s.as_bytes()[0] != 45
-    }
-    if s.contains('(') || s.contains(' ') || s.contains(')') || s.contains('\t') || s.contains('{') || s.contains('}') || s.contains('}') || s.contains('%') || s.is_empty() || rule_4(s) {
+    }*/
+    if s.contains('(') || s.contains(' ') || s.contains(')') || s.contains('\t') || s.contains('{') || s.contains('}') || s.contains('}') || s.contains('%') || s.is_empty() /* || rule_4(s) */ {
         format!("\"{}\"", s)
     } else {
         String::from(s)
