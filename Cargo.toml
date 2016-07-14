@@ -11,5 +11,5 @@ keywords = ["sexp","s-exp","symbolic","kicad"]
 use_clippy = ["clippy"]
 
 [dependencies]
-nom = "~1.2.0"
+nom = "^1.2.3"
 clippy = { version = "0.*", optional = true }
