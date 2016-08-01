@@ -7,9 +7,6 @@ description = "A symbolic-expression parser/writer"
 repository = "https://github.com/productize/symbolic-expressions"
 keywords = ["sexp","s-exp","symbolic","kicad"]
 
-[features]
-use_clippy = ["clippy"]
-
 [dependencies]
 nom = "^1.2.3"
 clippy = { version = "0.*", optional = true }
