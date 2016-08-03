@@ -131,15 +131,13 @@ fn test_number_string() {
 }
 
 #[test]
-#[should_panic(expected="called `Result::unwrap()` on an\
- `Err` value: Other(\"incomplete: Size(2)\")")]
+#[should_panic(expected="called `Result::unwrap()` on an `Err` value: Other(\"incomplete: Size(2)\")")]
 fn test_invalid1() {
     parse_fail("(")
 }
 
 #[test]
-#[should_panic(expected="called `Result::unwrap()` on an\
- `Err` value: Other(\"parse error: Alt |)|\")")]
+#[should_panic(expected="called `Result::unwrap()` on an `Err` value: Other(\"parse error: Alt |)|\")")]
 fn test_invalid2() {
     parse_fail(")")
 }
