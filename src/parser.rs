@@ -20,28 +20,30 @@ fn read_file(name: &str) -> result::Result<String, io::Error> {
     Ok(s)
 }
 
+/// parse a file as a symbolic-expression
 pub fn parse_file(name: &str) -> Result<Sexp> {
     let s = try!(match read_file(name) {
         Ok(s) => Ok(s),
-        Err(x) => str_error(format!("{:?}", x))
-    }); 
+        Err(x) => str_error(format!("{:?}", x)),
+    });
     parse_str(&s[..])
 }
 
+/// parse a str as a symbolic-expression
 pub fn parse_str(sexp: &str) -> Result<Sexp> {
     if sexp.is_empty() {
-        return Ok(Sexp::new_empty())
+        return Ok(Sexp::new_empty());
     }
     match parse_sexp(&sexp.as_bytes()[..]) {
         nom::IResult::Done(_, c) => Ok(c),
         nom::IResult::Error(err) => {
             match err {
-                nom::Err::Position(kind,p) => {
+                nom::Err::Position(kind, p) => {
                     str_error(format!("parse error: {:?} |{}|", kind, str::from_utf8(p).unwrap()))
-                },
-                _ => str_error("parse error".to_string())
+                }
+                _ => str_error("parse error".to_string()),
             }
-        },
+        }
         nom::IResult::Incomplete(x) => str_error(format!("incomplete: {:?}", x)),
     }
 }
@@ -70,7 +72,8 @@ named!(parse_list<Sexp>,
        chain!(
            char!('(') ~
                v: many0!(parse_sexp) ~
-               _space: opt!(nom::multispace) ~ // sometimes there is space after a closing bracket, this would not be caught by parse_sexp
+               _space: opt!(nom::multispace) ~
+// sometimes there is space after a closing bracket, this would not be caught by parse_sexp
                char!(')'),
            || Sexp::List(v) )
        );

@@ -6,25 +6,30 @@ use std::io;
 use std::fmt;
 use std::result;
 
+/// Error type for symbolic-expressions
 #[derive(Debug)]
 pub enum Error {
+    /// any other error type
     Other(String),
+    /// intended to give more detailed parser errrors, actually not used currently
     Parse(ParseError, String),
+    /// IO error
     Io(io::Error),
+    /// UTF8 parsing error
     FromUtf8(FromUtf8Error),
 }
 
 // TODO: actually use ParseError
 // looks like nom does not give a good way to be able to see line:col
+/// detailed symbolic-expression parse error information
 #[derive(Debug)]
 pub struct ParseError {
-    msg:String,
-    line:i64,
-    col:i64,
+    msg: String,
+    line: i64,
+    col: i64,
 }
 
 impl error::Error for Error {
-    
     fn description(&self) -> &str {
         match *self {
             Error::Other(ref s) => s,
@@ -58,30 +63,28 @@ impl From<FromUtf8Error> for Error {
 impl fmt::Display for Error {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> result::Result<(), fmt::Error> {
         match *self {
-            Error::Other(ref s) => {
-                write!(fmt, "Error:{}", s)
-            }
-            Error::Parse(ref pe, _) => {
-                write!(fmt, "Parse Error {}:{} {}", pe.line, pe.col, pe.msg)
-            }
+            Error::Other(ref s) => write!(fmt, "Error:{}", s),
+            Error::Parse(ref pe, _) => write!(fmt, "Parse Error {}:{} {}", pe.line, pe.col, pe.msg),
             Error::Io(ref error) => fmt::Display::fmt(error, fmt),
             Error::FromUtf8(ref error) => fmt::Display::fmt(error, fmt),
         }
     }
 }
 
+/// symbolic-expressions Result type
 pub type Result<T> = result::Result<T, Error>;
 
-pub fn str_error<T>(s:String) -> Result<T> {
+/// utility function that creates a symbolic-expressions Error Result from a String
+pub fn str_error<T>(s: String) -> Result<T> {
     Err(Error::Other(s))
 }
 
-pub fn parse_error<T>(line:i64, col:i64, msg:String) -> Result<T> {
+/// utility function that creates a symbolic-expressions Error Result for a parser error
+pub fn parse_error<T>(line: i64, col: i64, msg: String) -> Result<T> {
     let pe = ParseError {
-        msg:msg,
-        line:line,
-        col:col,
-        
+        msg: msg,
+        line: line,
+        col: col,
     };
     let s = format!("Parse Error: {}:{} {}", line, col, pe.msg);
     Err(Error::Parse(pe, s))
