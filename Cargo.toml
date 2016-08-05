@@ -1,6 +1,6 @@
 [package]
 name = "symbolic_expressions"
-version = "0.3.14"
+version = "0.3.15"
 authors = ["Joost Damad <joost@productize.be>"]
 license = "MIT"
 description = "A symbolic-expression parser/writer"
@@ -9,4 +9,3 @@ keywords = ["sexp","s-exp","symbolic","kicad"]
 
 [dependencies]
 nom = "^1.2.3"
-clippy = { version = "0.*", optional = true }
