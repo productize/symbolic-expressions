@@ -6,6 +6,7 @@ license = "MIT"
 description = "A symbolic-expression parser/writer"
 repository = "https://github.com/productize/symbolic-expressions"
 keywords = ["sexp","s-exp","symbolic","kicad"]
+documentation = "https://productize.github.io/symbolic-expressions"
 
 [dependencies]
 nom = "^1.2.3"
