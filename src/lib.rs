@@ -12,8 +12,7 @@ mod formatter;
 mod sexp;
 
 /// symbolic-expression parser code
-pub mod parser2;
-pub use parser2 as parser;
+pub mod parser;
 
 /// symbolic-expression serialization code
 pub mod ser;
