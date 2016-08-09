@@ -17,6 +17,9 @@ mod sexp;
 /// symbolic-expression parser code
 pub mod parser;
 
+/// symbolic-expression parser code expirimental improved version
+pub mod parser2;
+
 /// symbolic-expression serialization code
 pub mod ser;
 

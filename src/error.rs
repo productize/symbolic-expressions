@@ -25,8 +25,8 @@ pub enum Error {
 #[derive(Debug)]
 pub struct ParseError {
     msg: String,
-    line: i64,
-    col: i64,
+    line: usize,
+    col: usize,
 }
 
 impl error::Error for Error {
@@ -80,7 +80,7 @@ pub fn str_error<T>(s: String) -> Result<T> {
 }
 
 /// utility function that creates a symbolic-expressions Error Result for a parser error
-pub fn parse_error<T>(line: i64, col: i64, msg: String) -> Result<T> {
+pub fn parse_error<T>(line: usize, col: usize, msg: String) -> Result<T> {
     let pe = ParseError {
         msg: msg,
         line: line,
