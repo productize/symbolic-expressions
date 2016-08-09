@@ -4,9 +4,6 @@
 
 #![warn(missing_docs)]
 
-#[macro_use]
-extern crate nom;
-
 pub use error::*;
 pub use sexp::*;
 
@@ -15,10 +12,8 @@ mod formatter;
 mod sexp;
 
 /// symbolic-expression parser code
-pub mod parser;
-
-/// symbolic-expression parser code expirimental improved version
 pub mod parser2;
+pub use parser2 as parser;
 
 /// symbolic-expression serialization code
 pub mod ser;

@@ -1,12 +1,9 @@
 [package]
 name = "symbolic_expressions"
-version = "0.3.15"
+version = "0.4.0"
 authors = ["Joost Damad <joost@productize.be>"]
 license = "MIT"
 description = "A symbolic-expression parser/writer"
 repository = "https://github.com/productize/symbolic-expressions"
 keywords = ["sexp","s-exp","symbolic","kicad"]
 documentation = "https://productize.github.io/symbolic-expressions"
-
-[dependencies]
-nom = "^1.2.3"

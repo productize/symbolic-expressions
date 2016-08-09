@@ -1,8 +1,9 @@
 // (c) 2016 Productize SPRL <joost@productize.be>
 
-use super::*;
-use ::formatter;
-
+use ser;
+use formatter;
+use parser;
+    
 #[allow(dead_code)]
 fn check_parse_res(s: &str, o: &str) {
     let e = parser::parse_str(s).unwrap();
@@ -131,21 +132,30 @@ fn test_number_string() {
 }
 
 #[test]
-#[should_panic(expected="called `Result::unwrap()` on an `Err` value: Other(\"incomplete: Size(2)\")")]
+#[should_panic(expected="End of file reached")]
 fn test_invalid1() {
     parse_fail("(")
 }
 
 #[test]
-#[should_panic(expected="called `Result::unwrap()` on an `Err` value: Other(\"parse error: Alt |)|\")")]
+#[should_panic(expected="Unexpected )")]
 fn test_invalid2() {
     parse_fail(")")
 }
 
 #[test]
-#[should_panic(expected="incomplete: Size")]
+#[should_panic(expected="End of file reached")]
 fn test_invalid3() {
     parse_fail("\"hello")
+}
+
+#[test]
+#[should_panic(expected="line: 4, col: 5")]
+fn test_invalid_check_position() {
+    parse_fail("\"hello
+
+
+    ")
 }
 
 #[test]
