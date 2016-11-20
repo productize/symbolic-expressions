@@ -4,6 +4,8 @@
 
 #![warn(missing_docs)]
 
+extern crate serde;
+
 pub use error::*;
 pub use sexp::*;
 
@@ -11,14 +13,17 @@ mod error;
 mod formatter;
 mod sexp;
 
-/// symbolic-expression parser code
+/// symbolic-expression parser code: data -> symbolic-expression
 pub mod parser;
 
-/// symbolic-expression serialization code
+/// symbolic-expression serialization code: symbolic-expression -> data
 pub mod ser;
 
 pub use formatter::Rules;
 pub use formatter::Formatter;
+
+/// serde symbolic-expression decoding code: symbolic-expression -> rust
+pub mod decode;
 
 #[cfg(test)]
 mod test;
