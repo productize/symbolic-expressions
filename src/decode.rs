@@ -9,6 +9,43 @@ use Sexp;
 
 // loosely based on toml-rs
 
+macro_rules! forward_to_deserialize {
+    ($(
+        $name:ident ( $( $arg:ident : $ty:ty ),* );
+    )*) => {
+        $(
+            forward_to_deserialize!{
+                func: $name ( $( $arg: $ty ),* );
+            }
+        )*
+    };
+
+    (func: deserialize_enum ( $( $arg:ident : $ty:ty ),* );) => {
+        fn deserialize_enum<V>(
+            &mut self,
+            $(_: $ty,)*
+            _visitor: V,
+        ) -> ::std::result::Result<V::Value, Self::Error>
+            where V: ::serde::de::EnumVisitor
+        {
+            Err(::serde::de::Error::invalid_type(::serde::de::Type::Enum))
+        }
+    };
+
+    (func: $name:ident ( $( $arg:ident : $ty:ty ),* );) => {
+        #[inline]
+        fn $name<V>(
+            &mut self,
+            $(_: $ty,)*
+            visitor: V,
+        ) -> ::std::result::Result<V::Value, Self::Error>
+            where V: ::serde::de::Visitor
+        {
+            self.deserialize(visitor)
+        }
+    };
+}
+
 /// Description for errors which can occur while decoding a type.
 #[derive(PartialEq, Debug)]
 pub struct DecodeError {
@@ -530,5 +567,112 @@ impl de::Deserializer for Decoder {
     fn deserialize_struct_field<V>(&mut self, visitor:V) -> Result<V::Value, Self::Error>
         where V: de::Visitor {
         self.deserialize(visitor)
+    }
+}
+
+struct SeqDeserializer<'a, I> {
+    iter: I,
+    len: usize,
+    exp: &'a mut Option<Sexp>,
+}
+
+impl<'a, I> SeqDeserializer<'a, I> where I: Iterator<Item=Sexp> {
+    fn new(iter: I, len: usize, exp: &'a mut Option<Sexp>) -> Self {
+        SeqDeserializer {
+            iter: iter,
+            len: len,
+            exp: exp,
+        }
+    }
+
+    fn put_value_back(&mut self, v: Sexp) {
+        *self.exp = self.exp.take().or(Some(Sexp::List(Vec::new())));
+        match self.exp.as_mut().unwrap() {
+            &mut Sexp::List(ref mut a) => {
+                a.push(v);
+            },
+            _ => unreachable!(),
+        }
+    }
+}
+
+impl<'a, I> de::Deserializer for SeqDeserializer<'a, I>
+    where I: Iterator<Item=Sexp>,
+{
+    type Error = DecodeError;
+
+    fn deserialize<V>(&mut self, mut visitor: V)
+                      -> Result<V::Value, DecodeError>
+        where V: de::Visitor,
+    {
+        visitor.visit_seq(self)
+    }
+
+    forward_to_deserialize!{
+        deserialize_bool();
+        deserialize_usize();
+        deserialize_u8();
+        deserialize_u16();
+        deserialize_u32();
+        deserialize_u64();
+        deserialize_isize();
+        deserialize_i8();
+        deserialize_i16();
+        deserialize_i32();
+        deserialize_i64();
+        deserialize_f32();
+        deserialize_f64();
+        deserialize_char();
+        deserialize_str();
+        deserialize_string();
+        deserialize_unit();
+        deserialize_option();
+        deserialize_seq();
+        deserialize_seq_fixed_size(len: usize);
+        deserialize_bytes();
+        deserialize_map();
+        deserialize_unit_struct(name: &'static str);
+        deserialize_newtype_struct(name: &'static str);
+        deserialize_tuple_struct(name: &'static str, len: usize);
+        deserialize_struct(name: &'static str, fields: &'static [&'static str]);
+        deserialize_struct_field();
+        deserialize_tuple(len: usize);
+        deserialize_enum(name: &'static str, variants: &'static [&'static str]);
+        deserialize_ignored_any();
+    }
+}
+
+impl<'a, I> de::SeqVisitor for SeqDeserializer<'a, I>
+    where I: Iterator<Item=Sexp>
+{
+    type Error = DecodeError;
+
+    fn visit<V>(&mut self) -> Result<Option<V>, DecodeError>
+        where V: de::Deserialize
+    {
+        match self.iter.next() {
+            Some(value) => {
+                self.len -= 1;
+                let mut de = Decoder::new(value);
+                let v = try!(de::Deserialize::deserialize(&mut de));
+                if let Some(t) = de.exp {
+                    self.put_value_back(t);
+                }
+                Ok(Some(v))
+            }
+            None => Ok(None),
+        }
+    }
+
+    fn end(&mut self) -> Result<(), DecodeError> {
+        if self.len == 0 {
+            Ok(())
+        } else {
+            Err(de::Error::end_of_stream())
+        }
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (self.len, Some(self.len))
     }
 }
