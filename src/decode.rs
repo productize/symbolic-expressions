@@ -1,6 +1,7 @@
 // (c) 2016 Joost Yervante Damad <joost@productize.be>
 
 use std::error;
+use std::fmt;
 
 use serde;
 use serde::de;
@@ -127,6 +128,66 @@ pub enum DecodeErrorKind {
     InvalidType(&'static str),
 }
 
+impl fmt::Display for DecodeError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        try!(match self.kind {
+            ApplicationError(ref err) => {
+                write!(f, "{}", err)
+            }
+            ExpectedField(expected_type) => {
+                match expected_type {
+                    Some("table") => write!(f, "expected a section"),
+                    Some(e) => write!(f, "expected a value of type `{}`", e),
+                    None => write!(f, "expected a value"),
+                }
+            }
+            UnknownField => write!(f, "unknown field"),
+            ExpectedType(expected, found) => {
+                fn humanize(s: &str) -> String {
+                    if s == "section" {
+                        "a section".to_string()
+                    } else {
+                        format!("a value of type `{}`", s)
+                    }
+                }
+                write!(f, "expected {}, but found {}",
+                       humanize(expected),
+                       humanize(found))
+            }
+            ExpectedMapKey(idx) => {
+                write!(f, "expected at least {} keys", idx + 1)
+            }
+            ExpectedMapElement(idx) => {
+                write!(f, "expected at least {} elements", idx + 1)
+            }
+            NoEnumVariants => {
+                write!(f, "expected an enum variant to decode to")
+            }
+            NilTooLong => {
+                write!(f, "expected 0-length string")
+            }
+            SyntaxError => {
+                write!(f, "syntax error")
+            }
+            EndOfStream => {
+                write!(f, "end of stream")
+            }
+            InvalidType(s) => {
+                write!(f, "invalid type: {}", s)
+            }
+            CustomError(ref s) => {
+                write!(f, "custom error: {}", s)
+            }
+        });
+        match self.field {
+            Some(ref s) => {
+                write!(f, " for the key `{}`", s)
+            }
+            None => Ok(())
+        }
+    }
+}
+
 use self::DecodeErrorKind::*;
 
 pub fn decode<T:serde::Deserialize>(exp: Sexp) -> Option<T> {
@@ -178,7 +239,7 @@ impl Decoder {
     fn mismatch(&self, expected: &'static str,
                 found: &Option<Sexp>) -> DecodeError{
         match *found {
-            Some(ref val) => self.err(ExpectedType(expected, format!("{}", val))),
+            Some(ref val) => self.err(ExpectedType(expected, &format!("{}", val))),
             None => self.err(ExpectedField(Some(expected))),
         }
     }
@@ -197,7 +258,7 @@ impl de::Deserializer for Decoder {
             Some(Sexp::List(a)) => {
                 let len = a.len();
                 let iter = a.into_iter();
-                visitor.visit_seq(SeqDeserializer::new(iter, len, &mut self.sexp))
+                visitor.visit_seq(SeqDeserializer::new(iter, len, &mut self.exp))
             }
             None => Err(self.err(DecodeErrorKind::EndOfStream)),
         }
@@ -207,8 +268,8 @@ impl de::Deserializer for Decoder {
                            -> Result<V::Value, DecodeError>
         where V: de::Visitor
     {
-        match self.sexp.take() {
-            found@Some(Sexp::String(b)) => {
+        match self.exp.take() {
+            ref found@Some(Sexp::String(b)) => {
                 match b.as_str() {
                     "true" | "True" => visitor.visit_bool(true),
                     "false" | "False" => visitor.visit_bool(false),
@@ -244,8 +305,8 @@ impl de::Deserializer for Decoder {
                           -> Result<V::Value, DecodeError>
         where V: de::Visitor
     {
-        match self.sexp.take() {
-            found@Some(Sexp::String(s)) => {
+        match self.exp.take() {
+            ref found@Some(Sexp::String(s)) => {
                 match s.parse::<i64>() {
                     Ok(f) => visitor.visit_i64(f),
                     Err(_) => Err(self.mismatch("integer", found)),
@@ -308,8 +369,8 @@ impl de::Deserializer for Decoder {
                           -> Result<V::Value, DecodeError>
         where V: de::Visitor
     {
-        match self.sexp.take() {
-            found@Some(Sexp::String(s)) => {
+        match self.exp.take() {
+            ref found@Some(Sexp::String(s)) => {
                 match s.parse::<f64>() {
                     Ok(f) => visitor.visit_f64(f),
                     Err(_) => Err(self.mismatch("float", found)),
@@ -323,7 +384,7 @@ impl de::Deserializer for Decoder {
                           -> Result<V::Value, Self::Error>
         where V: de::Visitor,
     {
-        match self.sexp.take() {
+        match self.exp.take() {
             Some(Sexp::String(s)) => visitor.visit_string(s),
             ref found => Err(self.mismatch("string", found)),
         }
@@ -340,7 +401,7 @@ impl de::Deserializer for Decoder {
                            -> Result<V::Value, DecodeError>
         where V: de::Visitor
     {
-        match self.sexp.take() {
+        match self.exp.take() {
             Some(Sexp::String(ref s)) if s.chars().count() == 1 => {
                 visitor.visit_char(s.chars().next().unwrap())
             }
@@ -352,7 +413,7 @@ impl de::Deserializer for Decoder {
                              -> Result<V::Value, DecodeError>
         where V: de::Visitor
     {
-        if self.sexp.is_none() {
+        if self.exp.is_none() {
             visitor.visit_none()
         } else {
             visitor.visit_some(self)
@@ -363,7 +424,7 @@ impl de::Deserializer for Decoder {
                           -> Result<V::Value, DecodeError>
         where V: de::Visitor,
     {
-        if self.sexp.is_none() {
+        if self.exp.is_none() {
             let iter = None::<i32>.into_iter();
             visitor.visit_seq(de::value::SeqDeserializer::new(iter, 0))
         } else {
@@ -375,7 +436,7 @@ impl de::Deserializer for Decoder {
                           -> Result<V::Value, DecodeError>
         where V: de::Visitor,
     {
-        match self.sexp.take() {
+        match self.exp.take() {
             Some(Sexp::List(t)) => {
                 visitor.visit_map(MapVisitor {
                     iter: t.into_iter(),
@@ -396,7 +457,30 @@ impl de::Deserializer for Decoder {
     {
         Err(self.err(CustomError("enum type unsupported".into())))
     }
+    
+ fn deserialize_ignored_any<V>(&mut self, visitor: V)
+                                  -> Result<V::Value, Self::Error>
+        where V: de::Visitor
+    {
+        use serde::de::value::ValueDeserializer;
+        let mut d = <() as ValueDeserializer<Self::Error>>::into_deserializer(());
+        d.deserialize(visitor)
+    }
 
+    fn deserialize_bytes<V>(&mut self, visitor: V)
+                            -> Result<V::Value, Self::Error>
+        where V: de::Visitor
+    {
+        self.deserialize_seq(visitor)
+    }
+
+    fn deserialize_seq_fixed_size<V>(&mut self, _len: usize, visitor: V)
+                                     -> Result<V::Value, Self::Error>
+        where V: de::Visitor
+    {
+        self.deserialize_seq(visitor)
+    }
+    
     fn deserialize_newtype_struct<V>(&mut self, _name: &'static str, visitor: V)
                                      -> Result<V::Value, Self::Error>
         where V: de::Visitor
