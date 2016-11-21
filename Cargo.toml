@@ -10,3 +10,4 @@ documentation = "https://productize.github.io/symbolic-expressions"
 
 [dependencies]
 serde = "0.8.*"
+serde_derive = "0.8.*"

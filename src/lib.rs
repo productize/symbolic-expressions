@@ -3,7 +3,12 @@
 //! symbolic-expressions parsing and generating library
 
 #![warn(missing_docs)]
+#![feature(proc_macro)]
 
+#[macro_use]
+extern crate serde_derive;
+
+#[macro_use]
 extern crate serde;
 
 pub use error::*;

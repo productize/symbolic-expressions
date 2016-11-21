@@ -3,6 +3,7 @@
 use ser;
 use formatter;
 use parser;
+use decode;
     
 #[allow(dead_code)]
 fn check_parse_res(s: &str, o: &str) {
@@ -207,4 +208,17 @@ fn test_fail_pcb() {
 (kicad_pcb (version 4) (host pcbnew \"(2015-05-31 BZR 5692)-product\")
   \
                        (general))")
+}
+
+#[derive(Deserialize)]
+struct Hello {
+    world:String,
+    mars:i64,
+}
+
+#[test]
+fn test_decode1() {
+    let s = "(hello (world foo) (mars 42))";
+    let e = parser::parse_str(s).unwrap();
+    let h:Hello = decode::decode(e).unwrap();
 }
