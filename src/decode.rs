@@ -276,7 +276,7 @@ impl Decoder {
     fn mismatch(&self, expected: &'static str,
                 found: &Option<Sexp>) -> DecodeError{
         match *found {
-            Some(ref val) => self.err(ExpectedType(expected, &format!("{}", val))),
+            Some(ref _val) => self.err(ExpectedType(expected, "")),
             None => self.err(ExpectedField(Some(expected))),
         }
     }
@@ -306,11 +306,11 @@ impl de::Deserializer for Decoder {
         where V: de::Visitor
     {
         match self.exp.take() {
-            ref found@Some(Sexp::String(b)) => {
+            Some(Sexp::String(b)) => {
                 match b.as_str() {
                     "true" | "True" => visitor.visit_bool(true),
                     "false" | "False" => visitor.visit_bool(false),
-                    _ => Err(self.mismatch("bool", found)),
+                    _ => Err(self.mismatch("bool", &Some(Sexp::String(b)))),
                 }
             },
             ref found => Err(self.mismatch("bool", found)),
@@ -343,10 +343,10 @@ impl de::Deserializer for Decoder {
         where V: de::Visitor
     {
         match self.exp.take() {
-            ref found@Some(Sexp::String(s)) => {
+            Some(Sexp::String(s)) => {
                 match s.parse::<i64>() {
                     Ok(f) => visitor.visit_i64(f),
-                    Err(_) => Err(self.mismatch("integer", found)),
+                    Err(_) => Err(self.mismatch("integer", &Some(Sexp::String(s)))),
                 }
             },
             ref found => Err(self.mismatch("integer", found)),
@@ -407,10 +407,10 @@ impl de::Deserializer for Decoder {
         where V: de::Visitor
     {
         match self.exp.take() {
-            ref found@Some(Sexp::String(s)) => {
+            Some(Sexp::String(s)) => {
                 match s.parse::<f64>() {
                     Ok(f) => visitor.visit_f64(f),
-                    Err(_) => Err(self.mismatch("float", found)),
+                    Err(_) => Err(self.mismatch("float", &Some(Sexp::String(s)))),
                 }
             },
             ref found => Err(self.mismatch("float", found)),
@@ -798,5 +798,57 @@ impl<'a, I> de::MapVisitor for MapVisitor<'a, I>
             }),
             v => v,
         }
+    }
+}
+
+struct UnitDeserializer;
+
+impl de::Deserializer for UnitDeserializer {
+    type Error = DecodeError;
+
+    fn deserialize<V>(&mut self, mut visitor: V)
+                      -> Result<V::Value, DecodeError>
+        where V: de::Visitor,
+    {
+        visitor.visit_unit()
+    }
+
+    fn deserialize_option<V>(&mut self, mut visitor: V)
+                             -> Result<V::Value, DecodeError>
+        where V: de::Visitor,
+    {
+        visitor.visit_none()
+    }
+
+    forward_to_deserialize!{
+        deserialize_bool();
+        deserialize_usize();
+        deserialize_u8();
+        deserialize_u16();
+        deserialize_u32();
+        deserialize_u64();
+        deserialize_isize();
+        deserialize_i8();
+        deserialize_i16();
+        deserialize_i32();
+        deserialize_i64();
+        deserialize_f32();
+        deserialize_f64();
+        deserialize_char();
+        deserialize_str();
+        deserialize_string();
+        deserialize_unit();
+        deserialize_seq();
+        deserialize_seq_fixed_size(len: usize);
+        deserialize_bytes();
+        deserialize_map();
+        deserialize_unit_struct(name: &'static str);
+        deserialize_newtype_struct(name: &'static str);
+        deserialize_tuple_struct(name: &'static str, len: usize);
+        deserialize_struct(name: &'static str, fields: &'static [&'static str]);
+        deserialize_struct_field();
+        deserialize_tuple(len: usize);
+        deserialize_enum(name: &'static str, variants: &'static [&'static str]);
+        deserialize_ignored_any();
     }
 }
