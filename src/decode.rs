@@ -676,3 +676,127 @@ impl<'a, I> de::SeqVisitor for SeqDeserializer<'a, I>
         (self.len, Some(self.len))
     }
 }
+
+struct MapVisitor<'a, I> {
+    iter: I,
+    de: &'a mut Decoder,
+    key: Option<String>,
+    value: Option<Sexp>,
+}
+
+impl<'a, I> MapVisitor<'a, I> {
+    fn put_value_back(&mut self, v: Sexp) {
+        self.de.exp = self.de.exp.take().or_else(|| {
+            Some(Sexp::List(Vec::new()))
+        });
+
+        match self.de.exp.as_mut().unwrap() {
+            &mut Sexp::List(ref mut t) => {
+                let key = self.key.take().unwrap();
+                let mut l = vec![];
+                l.push(Sexp::String(key));
+                l.push(v);
+                t.push(Sexp::List(l));
+            },
+            _ => unreachable!(),
+        }
+    }
+}
+
+impl<'a, I> de::MapVisitor for MapVisitor<'a, I>
+    where I: Iterator<Item=Sexp>
+{
+    type Error = DecodeError;
+
+    fn visit_key<K>(&mut self) -> Result<Option<K>, DecodeError>
+        where K: de::Deserialize
+    {
+        while let Some(exp) = self.iter.next() {
+            let k = match exp.list_name() {
+                Ok(name) => name.clone(),
+                _ => continue,
+            };
+            let v = match exp.named_value(&k) {
+                Ok(v) => v,
+                _ => continue,
+            };
+            let mut dec = self.de.sub_decoder(Some(exp.clone()), &k);
+            self.key = Some(k);
+
+            match de::Deserialize::deserialize(&mut dec) {
+                Ok(val) => {
+                    self.value = Some(v.clone());
+                    return Ok(Some(val))
+                }
+
+                // If this was an unknown field, then we put the toml value
+                // back into the map and keep going.
+                Err(DecodeError {kind: DecodeErrorKind::UnknownField, ..}) => {
+                    self.put_value_back(v.clone());
+                }
+
+                Err(e) => return Err(e),
+            }
+        }
+        Ok(None)
+    }
+
+    fn visit_value<V>(&mut self) -> Result<V, DecodeError>
+        where V: de::Deserialize
+    {
+        match self.value.take() {
+            Some(t) => {
+                let mut dec = {
+                    // Borrowing the key here because Rust doesn't have
+                    // non-lexical borrows yet.
+                    let key = match self.key {
+                        Some(ref key) => &**key,
+                        None => ""
+                    };
+
+                    self.de.sub_decoder(Some(t), key)
+                };
+                let v = try!(de::Deserialize::deserialize(&mut dec));
+                if let Some(t) = dec.exp {
+                    self.put_value_back(t);
+                }
+                Ok(v)
+            },
+            None => Err(de::Error::end_of_stream())
+        }
+    }
+
+    fn end(&mut self) -> Result<(), DecodeError> {
+        if let Some(v) = self.value.take() {
+            self.put_value_back(v);
+        }
+        while let Some(exp) = self.iter.next() {
+            let k = match exp.list_name() {
+                Ok(name) => name.clone(),
+                _ => continue,
+            };
+            let v = match exp.named_value(&k) {
+                Ok(v) => v,
+                _ => continue,
+            };
+            self.key = Some(k);
+            self.put_value_back(v.clone());
+        }
+        Ok(())
+    }
+
+    fn missing_field<V>(&mut self, field_name: &'static str)
+                        -> Result<V, DecodeError> where V: de::Deserialize {
+        // See if the type can deserialize from a unit.
+        match de::Deserialize::deserialize(&mut UnitDeserializer) {
+            Err(DecodeError {
+                kind: DecodeErrorKind::InvalidType(..),
+                field,
+            }) => Err(DecodeError {
+                field: field.or(Some(field_name.to_string())),
+                kind: DecodeErrorKind::ExpectedField(None),
+            }),
+            v => v,
+        }
+    }
+}
