@@ -15,3 +15,6 @@
 
 # for libraries, ignore Cargo.lock
 Cargo.lock
+
+# backup files of cargo fmt
+*.bk
