@@ -29,7 +29,7 @@ impl de::Deserializer for Deserializer {
     type Error = Error;
 
     /// not used
-    fn deserialize<V>(&mut self, mut visitor: V)
+    fn deserialize<V>(&mut self, visitor: V)
                       -> Result<V::Value>
         where V: de::Visitor
     {
@@ -71,7 +71,9 @@ impl de::Deserializer for Deserializer {
                 }
                 match v[0] {
                     Sexp::String(ref name2) => {
-                        if name != name2.to_lowercase().as_str() {
+                        let name2 = name2.to_lowercase();
+                        let name = name.to_lowercase();
+                        if name != name2 {
                             return Err(Error::Decoder(format!("expecting name {} got {} in {}", name, name2, self.exp)))
                         }
                         visitor.visit_seq(SeqVisitor::new(v, true))
@@ -202,7 +204,7 @@ impl<'a> de::MapVisitor for StructVisitor<'a> {
                 if v.len() != 2 {
                     return Err(Error::Decoder("can't decode as map 1".into()))
                 }
-                if let Ok(k) = v[0].string() {
+                if let Ok(_) = v[0].string() {
                     self.value = Some(v[1].clone());
                     de::Deserialize::deserialize(&mut Deserializer::new(v[0].clone())).map(Some)
                 } else {

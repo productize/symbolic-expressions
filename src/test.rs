@@ -211,15 +211,25 @@ fn test_fail_pcb() {
 }
 
 #[derive(Deserialize, Debug)]
-struct Hello {
+struct DecodeStruct {
     world:String,
     mars:i64,
 }
+#[derive(Deserialize, Debug)]
+struct DecodeTupleStruct(i64, String);
 
 #[test]
-fn test_decode1() {
-    let s = "(hello (world foo) (mars 42))";
+fn test_decode_struct() {
+    let s = "(decodestruct (world foo) (mars 42))";
     let e = parser::parse_str(s).unwrap();
-    let h:Hello = decode::decode(e).unwrap();
+    let h:DecodeStruct = decode::decode(e).unwrap();
+    println!("{:?}", h);
+}
+
+#[test]
+fn test_decode_tuple_struct() {
+    let s = "(decodetuplestruct 42 foo)";
+    let e = parser::parse_str(s).unwrap();
+    let h:DecodeTupleStruct = decode::decode(e).unwrap();
     println!("{:?}", h);
 }
