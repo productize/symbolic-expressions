@@ -5,6 +5,7 @@ use std::error;
 use std::io;
 use std::fmt;
 use std::result;
+use serde::de;
 
 /// Error type for symbolic-expressions
 #[derive(Debug)]
@@ -17,10 +18,10 @@ pub enum Error {
     Io(io::Error),
     /// UTF8 parsing error
     FromUtf8(FromUtf8Error),
+    /// decoder error
+    Decoder(String),
 }
 
-// TODO: actually use ParseError
-// looks like nom does not give a good way to be able to see line:col
 /// detailed symbolic-expression parse error information
 #[derive(Debug)]
 pub struct ParseError {
@@ -33,6 +34,7 @@ impl error::Error for Error {
     fn description(&self) -> &str {
         match *self {
             Error::Other(ref s) => s,
+            Error::Decoder(ref s) => s,
             Error::Parse(_, ref pe) => pe,
             Error::Io(ref error) => error::Error::description(error),
             Error::FromUtf8(ref error) => error.description(),
@@ -64,10 +66,21 @@ impl fmt::Display for Error {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> result::Result<(), fmt::Error> {
         match *self {
             Error::Other(ref s) => write!(fmt, "Error:{}", s),
+            Error::Decoder(ref s) => write!(fmt, "Decoder Error:{}", s),
             Error::Parse(ref pe, _) => write!(fmt, "Parse Error {}:{} {}", pe.line, pe.col, pe.msg),
             Error::Io(ref error) => fmt::Display::fmt(error, fmt),
             Error::FromUtf8(ref error) => fmt::Display::fmt(error, fmt),
         }
+    }
+}
+
+impl de::Error for Error {
+    fn custom<T: Into<String>>(msg: T) -> Self {
+        Error::Decoder(msg.into())
+    }
+
+    fn end_of_stream() -> Self {
+        Error::Decoder("end_of_stream".into())
     }
 }
 
