@@ -273,9 +273,25 @@ fn test_decode_empty() {
 }
 
 #[test]
-fn test_decode_struct_missing1() {
+fn test_decode_struct_missing_rust_side() {
     let s = "(decodemissing1 (world 3) (bar 7))";
     let e = parser::parse_str(s).unwrap();
     let h:DecodeMissing1 = decode::decode(e).unwrap();
     assert_eq!(h, DecodeMissing1 { world:3 });
+}
+
+#[test]
+fn test_decode_struct_missing_exp_side() {
+    let s = "(decodemissing2 (world 3))";
+    let e = parser::parse_str(s).unwrap();
+    let h:DecodeMissing2 = decode::decode(e).unwrap();
+    assert_eq!(h, DecodeMissing2 { world:3, bar:None });
+}
+
+#[test]
+fn test_decode_struct_missing_exp_side_there() {
+    let s = "(decodemissing2 (world 3) (bar 7))";
+    let e = parser::parse_str(s).unwrap();
+    let h:DecodeMissing2 = decode::decode(e).unwrap();
+    assert_eq!(h, DecodeMissing2 { world:3, bar:Some(7) });
 }
