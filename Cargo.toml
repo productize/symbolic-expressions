@@ -7,7 +7,21 @@ description = "A symbolic-expression parser/writer"
 repository = "https://github.com/productize/symbolic-expressions"
 keywords = ["sexp","s-exp","symbolic","kicad"]
 documentation = "https://productize.github.io/symbolic-expressions"
+build = "src/build.rs"
+
+[features]
+default = ["serde_codegen"]
+nightly = ["serde_derive"]
+
+[build-dependencies]
+serde_codegen = { version = "0.8.*", optional = true }
 
 [dependencies]
 serde = "0.8.*"
-serde_derive = "0.8.*"
+serde_derive = { version = "0.8.*", optional = true }
+
+# build with default:
+# cargo build
+
+# build with nightly:
+# RUST_MIN_STACK=100000000 cargo build --features nightly --no-default-features

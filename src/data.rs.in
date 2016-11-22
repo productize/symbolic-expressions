@@ -1,0 +1,14 @@
+
+// datastructs for unit tests
+
+pub mod test {
+
+#[derive(Deserialize, Debug)]
+pub struct DecodeStruct {
+    world:String,
+    mars:i64,
+}
+#[derive(Deserialize, Debug)]
+pub struct DecodeTupleStruct(i64, String);
+
+}

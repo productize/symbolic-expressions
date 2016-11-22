@@ -3,8 +3,9 @@
 //! symbolic-expressions parsing and generating library
 
 #![warn(missing_docs)]
-#![feature(proc_macro)]
 
+#![cfg_attr(feature = "serde_derive", feature(proc_macro))]
+#[cfg(feature = "serde_derive")]
 #[macro_use]
 extern crate serde_derive;
 
@@ -29,6 +30,8 @@ pub use formatter::Formatter;
 
 /// serde symbolic-expression decoding code: symbolic-expression -> rust
 pub mod decode;
+
+pub mod data;
 
 #[cfg(test)]
 mod test;

@@ -4,6 +4,7 @@ use ser;
 use formatter;
 use parser;
 use decode;
+use data::test::*;
     
 #[allow(dead_code)]
 fn check_parse_res(s: &str, o: &str) {
@@ -209,14 +210,6 @@ fn test_fail_pcb() {
   \
                        (general))")
 }
-
-#[derive(Deserialize, Debug)]
-struct DecodeStruct {
-    world:String,
-    mars:i64,
-}
-#[derive(Deserialize, Debug)]
-struct DecodeTupleStruct(i64, String);
 
 #[test]
 fn test_decode_struct() {
