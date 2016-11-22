@@ -31,4 +31,11 @@ pub mod test {
         pub size:i64,
     }
     
+    /// Test structure
+    #[derive(Deserialize, Debug, PartialEq)]
+    pub struct DecodeMissing1 {
+        /// world
+        pub world:i64,
+    }
+    
 }

@@ -271,3 +271,11 @@ fn test_decode_empty() {
     let e = parser::parse_str(s).unwrap();
     let () = decode::decode(e).unwrap();
 }
+
+#[test]
+fn test_decode_struct_missing1() {
+    let s = "(decodemissing1 (world 3) (bar 7))";
+    let e = parser::parse_str(s).unwrap();
+    let h:DecodeMissing1 = decode::decode(e).unwrap();
+    assert_eq!(h, DecodeMissing1 { world:3 });
+}

@@ -88,14 +88,15 @@ impl de::Deserializer for Deserializer {
 
     fn deserialize_struct<V>(&mut self,
                          name: &'static str,
-                         fields: &'static [&'static str],
+                         _fields: &'static [&'static str],
                          mut visitor: V)
                          -> Result<V::Value>
         where V: de::Visitor {
         match self.exp {
             Sexp::List(ref v) => {
-                if v.len() != fields.len()+1 {
-                    return Err(Error::Decoder(format!("expecting {} elements for struct in {}", fields.len(), self.exp)))
+                // we don't mind if fields are missing
+                if v.len() < 1 {
+                    return Err(Error::Decoder(format!("missing struct name {} in {}", name, self.exp)))
                 }
                 match v[0] {
                     Sexp::String(ref name2) => {
