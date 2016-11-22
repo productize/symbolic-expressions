@@ -4,6 +4,7 @@ use ser;
 use formatter;
 use parser;
 use decode;
+use encode;
 use data::test::*;
 
 #[allow(dead_code)]
@@ -270,18 +271,24 @@ fn test_decode_struct_nested() {
 }
 
 #[test]
-fn test_decode_empty() {
+fn test_decode_encode_empty() {
     let s = "";
     let e = parser::parse_str(s).unwrap();
-    let () = decode::decode(e).unwrap();
+    let () = decode::decode(e.clone()).unwrap();
+    let f = encode::to_sexp(()).unwrap();
+    assert_eq!(e, f);
 }
 
 #[test]
-fn test_decode_struct_missing_rust_side() {
+fn test_decode_encode_struct_missing_rust_side() {
     let s = "(decodemissing1 (world 3) (bar 7))";
     let e = parser::parse_str(s).unwrap();
+    let s = "(decodemissing1 (world 3))";
+    let e2 = parser::parse_str(s).unwrap();
     let h: DecodeMissing1 = decode::decode(e).unwrap();
     assert_eq!(h, DecodeMissing1 { world: 3 });
+    let f = encode::to_sexp(h).unwrap();
+    assert_eq!(e2, f);
 }
 
 #[test]

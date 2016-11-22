@@ -15,7 +15,7 @@ pub trait IntoSexp {
 
 /// a symbolic-expression
 /// Can be a string or a list or nothing
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Sexp {
     /// plain String symbolic-expression
     String(String),
@@ -24,6 +24,37 @@ pub enum Sexp {
     /// empty, trivial symbolic-expression
     Empty,
 }
+
+/*
+impl PartialEq for Sexp {
+    fn eq(&self, other: &Sexp) -> bool {
+        match *self {
+            Sexp::String(ref s) => {
+                match *other {
+                    Sexp::String(ref s2) => {
+                        s == s2
+                    },
+                    _ => false,
+                }
+            },
+            Sexp::List(ref v) => {
+                match *other {
+                    Sexp::List(ref v2) => {
+                        v == v2
+                    },
+                    _ => false,
+                }
+            },
+            Sexp::Empty => {
+                match *other {
+                    Sexp::Empty => true,
+                    _ => false,
+                }
+            }
+        }
+    }
+}
+*/
 
 // Following the KiCad file formats specification chapter 4.4 - Identifiers and Strings:
 // A string may not contain an actual newline or carriage return,

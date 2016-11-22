@@ -210,7 +210,7 @@ impl ser::Serializer for Serializer {
         _len: usize
     ) -> Result<Vec<Sexp>> {
         let mut v = vec![];
-        v.push(Sexp::String(name.into()));
+        v.push(Sexp::String(name.to_lowercase()));
         Ok(v)
     }
 
@@ -289,7 +289,7 @@ impl ser::Serializer for Serializer {
         _len: usize
     ) -> Result<Vec<Sexp>> {
         let mut v = vec![];
-        v.push(Sexp::String(name.into()));
+        v.push(Sexp::String(name.to_lowercase()));
         Ok(v)
     }
 

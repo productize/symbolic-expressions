@@ -3,7 +3,7 @@
 pub mod test {
 
     /// Test structure
-    #[derive(Deserialize, Debug, PartialEq)]
+    #[derive(Deserialize, Serialize, Debug, PartialEq)]
     pub struct DecodeStruct {
         /// world
         pub world:String,
@@ -12,11 +12,11 @@ pub mod test {
     }
     
     /// Test tuple structure
-    #[derive(Deserialize, Debug, PartialEq)]
+    #[derive(Deserialize, Serialize, Debug, PartialEq)]
     pub struct DecodeTupleStruct(pub i64, pub String);
     
     /// Test structure
-    #[derive(Deserialize, Debug, PartialEq)]
+    #[derive(Deserialize, Serialize, Debug, PartialEq)]
     pub struct DecodeNested {
         /// world
         pub world:Vec<i64>,
@@ -25,21 +25,21 @@ pub mod test {
     }
 
     /// Test structure
-    #[derive(Deserialize, Debug, PartialEq)]
+    #[derive(Deserialize, Serialize, Debug, PartialEq)]
     pub struct Planet {
         /// size
         pub size:i64,
     }
     
     /// Test structure
-    #[derive(Deserialize, Debug, PartialEq)]
+    #[derive(Deserialize, Serialize, Debug, PartialEq)]
     pub struct DecodeMissing1 {
         /// world
         pub world:i64,
     }
     
     /// Test structure
-    #[derive(Deserialize, Debug, PartialEq)]
+    #[derive(Deserialize, Serialize, Debug, PartialEq)]
     pub struct DecodeMissing2 {
         /// world
         pub world:i64,
