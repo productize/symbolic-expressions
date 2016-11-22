@@ -210,7 +210,7 @@ fn test_fail_pcb() {
                        (general))")
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 struct Hello {
     world:String,
     mars:i64,
@@ -221,4 +221,5 @@ fn test_decode1() {
     let s = "(hello (world foo) (mars 42))";
     let e = parser::parse_str(s).unwrap();
     let h:Hello = decode::decode(e).unwrap();
+    println!("{:?}", h);
 }

@@ -33,7 +33,10 @@ impl de::Deserializer for Deserializer {
                       -> Result<V::Value>
         where V: de::Visitor
     {
-        Err(Error::Decoder("expecting specific deserializer to be called".into()))
+        match self.exp {
+            Sexp::String(_) => self.deserialize_string(visitor),
+            _ => Err(Error::Decoder(format!("expecting specific deserializer to be called for {}", self.exp)))
+        }
     }
 
     /// deserialize any string in a symbolic expression
@@ -68,7 +71,7 @@ impl de::Deserializer for Deserializer {
                 }
                 match v[0] {
                     Sexp::String(ref name2) => {
-                        if name != name2.as_str() {
+                        if name != name2.to_lowercase().as_str() {
                             return Err(Error::Decoder(format!("expecting name {} got {} in {}", name, name2, self.exp)))
                         }
                         visitor.visit_seq(SeqVisitor::new(v, true))
@@ -93,7 +96,9 @@ impl de::Deserializer for Deserializer {
                 }
                 match v[0] {
                     Sexp::String(ref name2) => {
-                        if name != name2.as_str() {
+                        let name2 = name2.to_lowercase();
+                        let name = name.to_lowercase();
+                        if name != name2 {
                             return Err(Error::Decoder(format!("expecting name {} got {} in {}", name, name2, self.exp)))
                         }
                         visitor.visit_map(StructVisitor::new(v))
