@@ -145,7 +145,7 @@ impl Sexp {
             _ => str_error(format!("Error parsing as float {}", self)),
         }
     }
-        
+
     /// access the symbolic-expression as if it is a String
     /// that is an i64
     pub fn i(&self) -> Result<i64> {

@@ -44,19 +44,19 @@ impl Parser {
             self.line_position = 0;
         }
     }
-    
+
     fn eat_space(&mut self) {
         while !self.eof() {
             let c = self.data[self.position];
             if c == ' ' || c == '\t' {
                 self.inc();
-                continue
+                continue;
             }
-            break
+            break;
         }
     }
 
-    fn eat_char(&mut self, c:char) -> Result<()> {
+    fn eat_char(&mut self, c: char) -> Result<()> {
         let c2 = try!(self.get());
         if c != c2 {
             self.parse_error(&format!("expected {} got {}", c, c2))
@@ -64,20 +64,20 @@ impl Parser {
             Ok(())
         }
     }
-    
+
     fn eof(&self) -> bool {
         self.position >= self.data.len()
     }
 
     fn fail_on_eof(&self) -> Result<()> {
         if self.eof() {
-            return self.parse_error("End of file reached")
+            return self.parse_error("End of file reached");
         }
         Ok(())
     }
-    
-    fn parse_error<T>(&self, msg:&str) -> Result<T> {
-        parse_error(self.line+1, self.line_position+1, msg.to_string())
+
+    fn parse_error<T>(&self, msg: &str) -> Result<T> {
+        parse_error(self.line + 1, self.line_position + 1, msg.to_string())
     }
 }
 
@@ -91,7 +91,7 @@ pub fn parse_str(sexp: &str) -> Result<Sexp> {
     parse(&mut parser)
 }
 
-fn parse(parser:&mut Parser) -> Result<Sexp> {
+fn parse(parser: &mut Parser) -> Result<Sexp> {
     parser.eat_space();
     let c = try!(parser.peek());
     if c == '(' {
@@ -105,15 +105,14 @@ fn parse(parser:&mut Parser) -> Result<Sexp> {
     }
 }
 
-fn parse_list(parser:&mut Parser) -> Result<Sexp> {
+fn parse_list(parser: &mut Parser) -> Result<Sexp> {
     try!(parser.eat_char('('));
     let mut v = vec![];
     while !parser.eof() {
         let c = try!(parser.peek());
         if c == ')' {
-            break
-        }
-        else if c == ' ' || c == '\t' || c == '\r' || c == '\n' {
+            break;
+        } else if c == ' ' || c == '\t' || c == '\r' || c == '\n' {
             parser.inc()
         } else {
             let s = try!(parse(parser));
@@ -125,14 +124,14 @@ fn parse_list(parser:&mut Parser) -> Result<Sexp> {
     Ok(Sexp::List(v))
 }
 
-fn parse_quoted_string(parser:&mut Parser) -> Result<Sexp> {
+fn parse_quoted_string(parser: &mut Parser) -> Result<Sexp> {
     let mut s = String::new();
     try!(parser.eat_char('"'));
     // note that escaped quotes are actually not allowed
     while !parser.eof() {
         let c = try!(parser.peek());
         if c == '"' {
-            break
+            break;
         }
         s.push(c);
         parser.inc()
@@ -141,12 +140,12 @@ fn parse_quoted_string(parser:&mut Parser) -> Result<Sexp> {
     Ok(Sexp::String(s))
 }
 
-fn parse_bare_string(parser:&mut Parser) -> Result<Sexp> {
+fn parse_bare_string(parser: &mut Parser) -> Result<Sexp> {
     let mut s = String::new();
     while !parser.eof() {
         let c = try!(parser.peek());
         if c == ' ' || c == '(' || c == ')' || c == '\r' || c == '\n' {
-            break
+            break;
         }
         s.push(c);
         parser.inc()
