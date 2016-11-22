@@ -216,7 +216,7 @@ fn test_decode_struct() {
     let s = "(decodestruct (world foo) (mars 42))";
     let e = parser::parse_str(s).unwrap();
     let h:DecodeStruct = decode::decode(e).unwrap();
-    println!("{:?}", h);
+    assert_eq!(h, DecodeStruct { world:"foo".into(), mars:42 });
 }
 
 #[test]
@@ -224,5 +224,50 @@ fn test_decode_tuple_struct() {
     let s = "(decodetuplestruct 42 foo)";
     let e = parser::parse_str(s).unwrap();
     let h:DecodeTupleStruct = decode::decode(e).unwrap();
-    println!("{:?}", h);
+    assert_eq!(h, DecodeTupleStruct(42,"foo".into()));
+}
+
+#[test]
+fn test_decode_vec_int() {
+    let s = "(4 5 42)";
+    let e = parser::parse_str(s).unwrap();
+    let h:Vec<i64> = decode::decode(e).unwrap();
+    assert_eq!(h, vec![4,5,42]);
+}
+
+#[test]
+fn test_decode_vec_string() {
+    let s = "(hi there mars)";
+    let e = parser::parse_str(s).unwrap();
+    let h:Vec<String> = decode::decode(e).unwrap();
+    let i:Vec<String> = vec!["hi","there", "mars"].iter().map(|&x| x.into()).collect();
+    assert_eq!(h, i);
+}
+
+#[test]
+fn test_decode_vec_string_int() {
+    let s = "(4 5 42)";
+    let e = parser::parse_str(s).unwrap();
+    let h:Vec<String> = decode::decode(e).unwrap();
+    let i:Vec<String> = vec!["4","5", "42"].iter().map(|&x| x.into()).collect();
+    assert_eq!(h, i);
+}
+
+#[test]
+fn test_decode_struct_nested() {
+    let s = "(decodenested (world (1 2 3)) (mars (planet (size 7))))";
+    let e = parser::parse_str(s).unwrap();
+    let h:DecodeNested = decode::decode(e).unwrap();
+    let i = DecodeNested {
+        world:vec![1,2,3],
+        mars:Planet { size: 7 },
+    };
+    assert_eq!(h, i);
+}
+
+#[test]
+fn test_decode_empty() {
+    let s = "";
+    let e = parser::parse_str(s).unwrap();
+    let () = decode::decode(e).unwrap();
 }

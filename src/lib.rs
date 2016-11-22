@@ -31,6 +31,7 @@ pub use formatter::Formatter;
 /// serde symbolic-expression decoding code: symbolic-expression -> rust
 pub mod decode;
 
+/// serde-enabled data structures used in testing
 pub mod data;
 
 #[cfg(test)]

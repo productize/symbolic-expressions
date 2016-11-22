@@ -11,11 +11,12 @@ use Sexp;
 
 use error::{Result,Error};
 
+/// decode a symbolic expression to a rust expression using serde
 pub fn decode<T:serde::Deserialize>(exp: Sexp) -> Result<T> {
     serde::Deserialize::deserialize(&mut Deserializer::new(exp))
 }
 
-pub struct Deserializer {
+struct Deserializer {
     pub exp: Sexp,
 }
 

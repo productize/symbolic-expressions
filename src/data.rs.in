@@ -1,14 +1,34 @@
 
-// datastructs for unit tests
-
+/// datastructs for unit tests
 pub mod test {
 
-#[derive(Deserialize, Debug)]
-pub struct DecodeStruct {
-    world:String,
-    mars:i64,
-}
-#[derive(Deserialize, Debug)]
-pub struct DecodeTupleStruct(i64, String);
+    /// Test structure
+    #[derive(Deserialize, Debug, PartialEq)]
+    pub struct DecodeStruct {
+        /// world
+        pub world:String,
+        /// mars
+        pub mars:i64,
+    }
+    
+    /// Test tuple structure
+    #[derive(Deserialize, Debug, PartialEq)]
+    pub struct DecodeTupleStruct(pub i64, pub String);
+    
+    /// Test structure
+    #[derive(Deserialize, Debug, PartialEq)]
+    pub struct DecodeNested {
+        /// world
+        pub world:Vec<i64>,
+        /// mars
+        pub mars:Planet,
+    }
 
+    /// Test structure
+    #[derive(Deserialize, Debug, PartialEq)]
+    pub struct Planet {
+        /// size
+        pub size:i64,
+    }
+    
 }
