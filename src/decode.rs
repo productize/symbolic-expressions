@@ -5,11 +5,12 @@ use serde::de;
 
 use Sexp;
 
+use error::{Result, Error};
+
 // loosely based on serde-yaml, toml-rs, serde_json
 
 // TODO: get rid of some of the clones; code is really spilling memory; yet fast enough for my usage...
 
-use error::{Result, Error};
 
 /// decode a symbolic expression to a rust expression using serde
 pub fn decode<T: serde::Deserialize>(exp: Sexp) -> Result<T> {
