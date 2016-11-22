@@ -213,61 +213,73 @@ fn test_fail_pcb() {
 }
 
 #[test]
-fn test_decode_struct() {
+fn test_decode_encode_struct() {
     let s = "(decodestruct (world foo) (mars 42))";
     let e = parser::parse_str(s).unwrap();
-    let h: DecodeStruct = decode::decode(e).unwrap();
+    let h: DecodeStruct = decode::decode(e.clone()).unwrap();
     assert_eq!(h,
                DecodeStruct {
                    world: "foo".into(),
                    mars: 42,
                });
+    let f = encode::to_sexp(h).unwrap();
+    assert_eq!(e,f);
 }
 
 #[test]
-fn test_decode_tuple_struct() {
+fn test_decode_encode_tuple_struct() {
     let s = "(decodetuplestruct 42 foo)";
     let e = parser::parse_str(s).unwrap();
-    let h: DecodeTupleStruct = decode::decode(e).unwrap();
+    let h: DecodeTupleStruct = decode::decode(e.clone()).unwrap();
     assert_eq!(h, DecodeTupleStruct(42, "foo".into()));
+    let f = encode::to_sexp(h).unwrap();
+    assert_eq!(e,f);
 }
 
 #[test]
-fn test_decode_vec_int() {
+fn test_decode_encode_vec_int() {
     let s = "(4 5 42)";
     let e = parser::parse_str(s).unwrap();
-    let h: Vec<i64> = decode::decode(e).unwrap();
+    let h: Vec<i64> = decode::decode(e.clone()).unwrap();
     assert_eq!(h, vec![4, 5, 42]);
+    let f = encode::to_sexp(h).unwrap();
+    assert_eq!(e,f);
 }
 
 #[test]
-fn test_decode_vec_string() {
+fn test_decode_encode_vec_string() {
     let s = "(hi there mars)";
     let e = parser::parse_str(s).unwrap();
-    let h: Vec<String> = decode::decode(e).unwrap();
+    let h: Vec<String> = decode::decode(e.clone()).unwrap();
     let i: Vec<String> = vec!["hi", "there", "mars"].iter().map(|&x| x.into()).collect();
     assert_eq!(h, i);
+    let f = encode::to_sexp(h).unwrap();
+    assert_eq!(e,f);
 }
 
 #[test]
-fn test_decode_vec_string_int() {
+fn test_decode_encode_vec_string_int() {
     let s = "(4 5 42)";
     let e = parser::parse_str(s).unwrap();
-    let h: Vec<String> = decode::decode(e).unwrap();
+    let h: Vec<String> = decode::decode(e.clone()).unwrap();
     let i: Vec<String> = vec!["4", "5", "42"].iter().map(|&x| x.into()).collect();
     assert_eq!(h, i);
+    let f = encode::to_sexp(h).unwrap();
+    assert_eq!(e,f);
 }
 
 #[test]
-fn test_decode_struct_nested() {
+fn test_decode_encode_struct_nested() {
     let s = "(decodenested (world (1 2 3)) (mars (planet (size 7))))";
     let e = parser::parse_str(s).unwrap();
-    let h: DecodeNested = decode::decode(e).unwrap();
+    let h: DecodeNested = decode::decode(e.clone()).unwrap();
     let i = DecodeNested {
         world: vec![1, 2, 3],
         mars: Planet { size: 7 },
     };
     assert_eq!(h, i);
+    let f = encode::to_sexp(h).unwrap();
+    assert_eq!(e,f);
 }
 
 #[test]
@@ -292,25 +304,29 @@ fn test_decode_encode_struct_missing_rust_side() {
 }
 
 #[test]
-fn test_decode_struct_missing_exp_side() {
+fn test_decode_encode_struct_missing_exp_side() {
     let s = "(decodemissing2 (world 3))";
     let e = parser::parse_str(s).unwrap();
-    let h: DecodeMissing2 = decode::decode(e).unwrap();
+    let h: DecodeMissing2 = decode::decode(e.clone()).unwrap();
     assert_eq!(h,
                DecodeMissing2 {
                    world: 3,
                    bar: None,
                });
+    let f = encode::to_sexp(h).unwrap();
+    assert_eq!(e,f);
 }
 
 #[test]
-fn test_decode_struct_missing_exp_side_there() {
+fn test_decode_encode_struct_missing_exp_side_there() {
     let s = "(decodemissing2 (world 3) (bar 7))";
     let e = parser::parse_str(s).unwrap();
-    let h: DecodeMissing2 = decode::decode(e).unwrap();
+    let h: DecodeMissing2 = decode::decode(e.clone()).unwrap();
     assert_eq!(h,
                DecodeMissing2 {
                    world: 3,
                    bar: Some(7),
                });
+    let f = encode::to_sexp(h).unwrap();
+    assert_eq!(e,f);
 }

@@ -302,10 +302,13 @@ impl ser::Serializer for Serializer {
         where V: ser::Serialize,
     {
         let mut v = vec![];
-        v.push(Sexp::String(key.into()));
         let value = try!(to_sexp(value));
-        v.push(value);
-        state.push(Sexp::List(v));
+        // don't add empty values
+        if value != Sexp::Empty {
+            v.push(Sexp::String(key.into()));
+            v.push(value);
+            state.push(Sexp::List(v));
+        }
         Ok(())
     }
 
