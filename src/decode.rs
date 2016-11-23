@@ -28,17 +28,26 @@ impl Deserializer {
 impl de::Deserializer for Deserializer {
     type Error = Error;
 
-    /// unclear why called instead of specifics...
+    /// called when we call deserialize below for a nested part
     fn deserialize<V>(&mut self, visitor: V) -> Result<V::Value>
         where V: de::Visitor
     {
-        match self.exp {
-            Sexp::String(_) => self.deserialize_string(visitor),
-            _ => {
-                Err(Error::Decoder(format!("expecting specific deserializer to be called for {}",
-                                           self.exp)))
-            }
+        if self.exp.is_string() {
+            return self.deserialize_string(visitor)
         }
+        if self.exp.is_list() {
+            let v = try!(self.exp.take_list());
+            let name = unsafe {
+                let s = try!(v[0].string());
+                let ret = mem::transmute(&s as &str);
+                mem::forget(s);
+                ret
+            };
+            let len = v.len() - 1;
+            self.exp = Sexp::List(v);
+            return self.deserialize_tuple_struct(name, len, visitor)
+        }
+        Err(Error::Decoder(format!("expecting specific deserializer to be called for {}", self.exp)))
     }
 
     /// deserialize any string in a symbolic expression
@@ -200,16 +209,23 @@ impl de::MapVisitor for StructVisitor {
         mem::swap(&mut exp, &mut self.seq[self.i]);
         self.i += 1;
         let mut v = try!(exp.take_list());
-        if v.len() != 2 {
+        if v.len() < 2 {
             return Err(Error::Decoder(format!("can't decode as map: {:?}", v)));
         }
-        if let Ok(_) = v[0].string() {
-            let mut value = Sexp::Empty;
-            mem::swap(&mut value, &mut v[1]);
-            self.value = Some(value);
-            let mut key = Sexp::Empty;
-            mem::swap(&mut key, &mut v[0]);
-            de::Deserialize::deserialize(&mut Deserializer::new(key)).map(Some)
+        if v[0].is_string() {
+            if v.len() == 2 {
+                let mut value = Sexp::Empty;
+                mem::swap(&mut value, &mut v[1]);
+                self.value = Some(value);
+                let mut key = Sexp::Empty;
+                mem::swap(&mut key, &mut v[0]);
+                de::Deserialize::deserialize(&mut Deserializer::new(key)).map(Some)
+            } else {
+                // deserialize whole element, which could be a tuple struct
+                let key = v[0].clone();
+                self.value = Some(Sexp::List(v));
+                de::Deserialize::deserialize(&mut Deserializer::new(key)).map(Some)
+            }
         } else {
             return Err(Error::Decoder(format!("key is not a string: {}", v[0])));
         }

@@ -289,7 +289,8 @@ impl ser::Serializer for Serializer {
         _len: usize
     ) -> Result<Vec<Sexp>> {
         let mut v = vec![];
-        v.push(Sexp::String(name.to_lowercase()));
+        let name = name.to_lowercase();
+        v.push(Sexp::String(name));
         Ok(v)
     }
 
@@ -302,13 +303,36 @@ impl ser::Serializer for Serializer {
         where V: ser::Serialize,
     {
         let mut v = vec![];
+
         let value = try!(to_sexp(value));
+        
         // don't add empty values
-        if value != Sexp::Empty {
-            v.push(Sexp::String(key.into()));
-            v.push(value);
-            state.push(Sexp::List(v));
+        if value == Sexp::Empty {
+            return Ok(())
         }
+        
+        // check if the value is a list that has the same
+        // first element name as the containing struct
+        // push the elements directly in the containing List
+        if value.is_list() {
+            let x = try!(value.list()); // Ok
+            if !x.is_empty() && x.len() >= 2 {
+                if x[0].is_string() {
+                    let ok = {
+                        let name = try!(x[0].string()); // Ok
+                        key == name.as_str()
+                    };
+                    if ok {
+                        state.push(value.clone()); // TODO optimize
+                        return Ok(())
+                    }
+                }
+            }
+        }
+        
+        v.push(Sexp::String(key.into()));
+        v.push(value);
+        state.push(Sexp::List(v));
         Ok(())
     }
 

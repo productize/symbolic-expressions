@@ -157,6 +157,22 @@ impl Sexp {
         }
     }
 
+    /// is this expression a string
+    pub fn is_string(&self) -> bool {
+        match *self {
+            Sexp::String(_) => true,
+            _ => false,
+        }
+    }
+
+    /// is this expression a list
+    pub fn is_list(&self) -> bool {
+        match *self {
+            Sexp::List(_) => true,
+            _ => false,
+        }
+    }
+    
     /// access the symbolic-expression as if it is a String
     /// that is a f64
     pub fn f(&self) -> Result<f64> {

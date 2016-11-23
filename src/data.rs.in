@@ -46,5 +46,13 @@ pub mod test {
         /// bar
         pub bar:Option<i64>,
     }
-    
+
+    /// Test structure
+    #[derive(Deserialize, Serialize, Debug, PartialEq)]
+    pub struct DecodeNestedTupleStruct {
+        /// world
+        pub world:Vec<i64>,
+        /// decodetuplestruct
+        pub decodetuplestruct:DecodeTupleStruct,
+    }
 }

@@ -279,8 +279,38 @@ fn test_decode_encode_struct_nested() {
     };
     assert_eq!(h, i);
     let f = encode::to_sexp(h).unwrap();
-    assert_eq!(e,f);
+    assert_eq!(s,format!("{}", f));
 }
+
+#[test]
+#[should_panic]
+fn test_decode_encode_struct_nested_tuple_struct() {
+    let s = "(decodenestedtuplestruct (world (1 2 3)) (decodetuplestruct (decodetuplestruct 7 foo)))";
+    let e = parser::parse_str(s).unwrap();
+    let h: DecodeNestedTupleStruct = decode::decode(e.clone()).unwrap();
+    let i = DecodeNestedTupleStruct {
+        world: vec![1, 2, 3],
+        decodetuplestruct: DecodeTupleStruct(7, "foo".into()),
+    };
+    assert_eq!(h, i);
+    let f = encode::to_sexp(h).unwrap();
+    assert_eq!(s ,format!("{}", f));
+}
+
+#[test]
+fn test_decode_encode_struct_nested_tuple_struct2() {
+    let s = "(decodenestedtuplestruct (world (1 2 3)) (decodetuplestruct 7 foo))";
+    let e = parser::parse_str(s).unwrap();
+    let h: DecodeNestedTupleStruct = decode::decode(e.clone()).unwrap();
+    let i = DecodeNestedTupleStruct {
+        world: vec![1, 2, 3],
+        decodetuplestruct: DecodeTupleStruct(7, "foo".into()),
+    };
+    assert_eq!(h, i);
+    let f = encode::to_sexp(h).unwrap();
+    assert_eq!(s, format!("{}", f));
+}
+
 
 #[test]
 fn test_decode_encode_empty() {
