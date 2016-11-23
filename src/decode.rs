@@ -23,6 +23,12 @@ impl Deserializer {
     pub fn new(exp: Sexp) -> Deserializer {
         Deserializer { exp: exp }
     }
+
+    pub fn take(&mut self) -> Sexp {
+        let mut exp = Sexp::Empty;
+        mem::swap(&mut exp, &mut self.exp);
+        exp
+    }
 }
 
 impl de::Deserializer for Deserializer {
@@ -137,10 +143,64 @@ impl de::Deserializer for Deserializer {
         visitor.visit_some(self)
     }
 
+    fn deserialize_enum<V>(&mut self,
+                           name: &'static str,
+                           variants: &'static [&'static str],
+                           mut visitor: V)
+                           -> Result<V::Value> where V: de::EnumVisitor {
+        println!("Variant: name: {}", name);
+        let mut exp = self.take();
+        if exp.is_list() {
+            let (found, found_name, v) = {
+                let mut v = try!(exp.take_list());
+                if v.len() < 1 {
+                    return Err(Error::Decoder(format!("missing variant name in {:?} in {}",
+                                                      v,
+                                                      name)));
+                }
+                let found_name = try!(v[0].string()).to_lowercase();
+                let mut found = false;
+                let mut variant_found:String = "".into();
+                for &variant in variants {
+                    if variant.to_lowercase() == found_name {
+                        found = true;
+                        variant_found.push_str(variant);
+                        v[0] = Sexp::String(variant.into());
+                        break
+                    }
+                }
+                (found, found_name, v)
+            };
+            if found {
+                visitor.visit(VariantVisitor::new(Sexp::List(v)))
+            } else {
+                Err(Error::Decoder(format!("unknown variant {} in {}", found_name, name)))
+            }
+        } else if exp.is_string() {
+            let s = try!(exp.take_string());
+            let mut found = false;
+            let mut variant_found:String = "".into();
+            for &variant in variants {
+                if variant.to_lowercase() == s {
+                    found = true;
+                    variant_found.push_str(variant);
+                    break
+                }
+            }
+            if found {
+                visitor.visit(VariantVisitor::new(Sexp::String(variant_found)))
+            } else {
+                Err(Error::Decoder(format!("unknown variant {} in {}", s, name)))
+            }
+        } else {
+            Err(Error::Decoder("can't do variant for Empty".into()))
+        }
+    }
+    
     forward_to_deserialize!{
         bool usize u8 u16 u32 u64 isize i8 i16 i32 i64 f32 f64 char str
         seq_fixed_size bytes map unit_struct 
-        struct_field tuple ignored_any enum
+        struct_field tuple ignored_any
     }
 }
 
@@ -275,5 +335,59 @@ impl de::MapVisitor for StructVisitor {
 
         let mut de = MissingFieldDeserializer(field);
         Ok(try!(de::Deserialize::deserialize(&mut de)))
+    }
+}
+
+struct VariantVisitor {
+    exp:Sexp,
+}
+
+impl VariantVisitor {
+    fn new(exp:Sexp) -> Self {
+        VariantVisitor { exp:exp }
+    }
+
+    fn take(&mut self) -> Sexp {
+        let mut exp = Sexp::Empty;
+        mem::swap(&mut exp, &mut self.exp);
+        exp
+    }
+}
+
+impl de::VariantVisitor for VariantVisitor {
+    type Error = Error;
+       fn visit_variant<V>(&mut self) -> Result<V>
+        where V: de::Deserialize,
+    {
+           println!("VariantVisitor: {}", self.exp);
+           de::Deserialize::deserialize(&mut Deserializer::new(self.take()))
+    }
+
+    fn visit_unit(&mut self) -> Result<()> {
+        Ok(())
+    }
+
+    fn visit_newtype<T>(&mut self) -> Result<T>
+        where T: de::Deserialize,
+    {
+        de::Deserialize::deserialize(&mut Deserializer::new(self.take()))
+    }
+
+    fn visit_tuple<V>(&mut self, _len: usize, visitor: V) -> Result<V::Value>
+        where V: de::Visitor,
+    {
+        de::Deserializer::deserialize(&mut Deserializer::new(self.take()),
+                                      visitor)
+    }
+
+    fn visit_struct<V>(
+        &mut self,
+        _fields: &'static [&'static str],
+        visitor: V
+    ) -> Result<V::Value>
+        where V: de::Visitor,
+    {
+        de::Deserializer::deserialize(&mut Deserializer::new(self.take()),
+                                      visitor)
     }
 }

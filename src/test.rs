@@ -360,3 +360,24 @@ fn test_decode_encode_struct_missing_exp_side_there() {
     let f = encode::to_sexp(h).unwrap();
     assert_eq!(e,f);
 }
+
+#[test]
+fn test_decode_enum_simplest() {
+    let s = "one";
+    let e = parser::parse_str(s).unwrap();
+    let h: DecodeEnum = decode::decode(e.clone()).unwrap();
+    assert_eq!(h, DecodeEnum::One);
+    //let f = encode::to_sexp(h).unwrap();
+    //assert_eq!(e,f);
+}
+
+
+#[test]
+fn test_decode_vec_enum() {
+    let s = "(one two)";
+    let e = parser::parse_str(s).unwrap();
+    let h: Vec<DecodeEnum> = decode::decode(e.clone()).unwrap();
+    assert_eq!(h, vec![DecodeEnum::One, DecodeEnum::Two]);
+    //let f = encode::to_sexp(h).unwrap();
+    //assert_eq!(e,f);
+}
