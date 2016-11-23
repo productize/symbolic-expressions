@@ -201,7 +201,7 @@ impl de::MapVisitor for StructVisitor {
         self.i += 1;
         let mut v = try!(exp.take_list());
         if v.len() != 2 {
-            return Err(Error::Decoder("can't decode as map 1".into()));
+            return Err(Error::Decoder(format!("can't decode as map: {:?}", v)));
         }
         if let Ok(_) = v[0].string() {
             let mut value = Sexp::Empty;
