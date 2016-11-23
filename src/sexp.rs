@@ -3,6 +3,7 @@
 use std::fmt;
 use std::result;
 use std::str::FromStr;
+use std::mem;
 
 use str_error;
 use Result;
@@ -24,37 +25,6 @@ pub enum Sexp {
     /// empty, trivial symbolic-expression
     Empty,
 }
-
-/*
-impl PartialEq for Sexp {
-    fn eq(&self, other: &Sexp) -> bool {
-        match *self {
-            Sexp::String(ref s) => {
-                match *other {
-                    Sexp::String(ref s2) => {
-                        s == s2
-                    },
-                    _ => false,
-                }
-            },
-            Sexp::List(ref v) => {
-                match *other {
-                    Sexp::List(ref v2) => {
-                        v == v2
-                    },
-                    _ => false,
-                }
-            },
-            Sexp::Empty => {
-                match *other {
-                    Sexp::Empty => true,
-                    _ => false,
-                }
-            }
-        }
-    }
-}
-*/
 
 // Following the KiCad file formats specification chapter 4.4 - Identifiers and Strings:
 // A string may not contain an actual newline or carriage return,
@@ -146,6 +116,26 @@ impl Sexp {
         Sexp::List(v)
     }
 
+    /// if the expression is a list, take out the list and swap it with Empty
+    pub fn take_list(&mut self) -> Result<Vec<Sexp>> {
+        let mut e = Sexp::Empty;
+        mem::swap(&mut e, self);
+        match e {
+            Sexp::List(v) => Ok(v),
+            _ => str_error(format!("Not a list: {}", e)),
+        }
+    }
+
+    /// if the expression is a string, take it out and swap it with Empty
+    pub fn take_string(&mut self) -> Result<String> {
+        let mut e = Sexp::Empty;
+        mem::swap(&mut e, self);
+        match e {
+            Sexp::String(s) => Ok(s),
+            _ => str_error(format!("Not a string: {}", e)),
+        }
+    }
+    
     /// create a symbolic-expression via the IntoSexp trait
     pub fn from<T: IntoSexp>(t: &T) -> Sexp {
         t.into_sexp()

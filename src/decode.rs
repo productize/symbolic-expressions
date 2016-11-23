@@ -2,15 +2,13 @@
 
 use serde;
 use serde::de;
+use std::mem;
 
 use Sexp;
 
 use error::{Result, Error};
 
 // loosely based on serde-yaml, toml-rs, serde_json
-
-// TODO: get rid of some of the clones; code is really spilling memory; yet fast enough for my usage...
-
 
 /// decode a symbolic expression to a rust expression using serde
 pub fn decode<T: serde::Deserialize>(exp: Sexp) -> Result<T> {
@@ -47,10 +45,7 @@ impl de::Deserializer for Deserializer {
     fn deserialize_string<V>(&mut self, mut visitor: V) -> Result<V::Value>
         where V: de::Visitor
     {
-        match self.exp {
-            Sexp::String(ref s) => visitor.visit_string(s.clone()),
-            _ => Err(Error::Decoder(format!("expecting string got {}", self.exp))),
-        }
+        visitor.visit_string(try!(self.exp.take_string()))
     }
 
     /// the empty symbolic-expression
@@ -71,35 +66,22 @@ impl de::Deserializer for Deserializer {
                                    -> Result<V::Value>
         where V: de::Visitor
     {
-        match self.exp {
-            Sexp::List(ref v) => {
-                if v.len() != len + 1 {
-                    return Err(Error::Decoder(format!("expecting {} elements for tuple struct \
-                                                       in {}",
-                                                      len,
-                                                      self.exp)));
-                }
-                match v[0] {
-                    Sexp::String(ref name2) => {
-                        let name2 = name2.to_lowercase();
-                        let name = name.to_lowercase();
-                        if name != name2 {
-                            return Err(Error::Decoder(format!("expecting name {} got {} in {}",
-                                                              name,
-                                                              name2,
-                                                              self.exp)));
-                        }
-                        visitor.visit_seq(SeqVisitor::new(v, true))
-                    }
-                    _ => {
-                        Err(Error::Decoder(format!("expecting string as first element of list \
-                                                    got {}",
-                                                   self.exp)))
-                    }
-                }
-            }
-            _ => Err(Error::Decoder(format!("expecting list got {}", self.exp))),
+        let v = try!(self.exp.take_list());
+        if v.len() != len + 1 {
+            return Err(Error::Decoder(format!("expecting {} elements for tuple struct \
+                                               in {}",
+                                              len,
+                                              self.exp)));
         }
+        let name2 = try!(v[0].string()).to_lowercase();
+        let name = name.to_lowercase();
+        if name != name2 {
+            return Err(Error::Decoder(format!("expecting name {} got {} in {}",
+                                              name,
+                                              name2,
+                                              self.exp)));
+        }
+        visitor.visit_seq(SeqVisitor::new(v, true))
     }
 
     fn deserialize_struct<V>(&mut self,
@@ -109,44 +91,28 @@ impl de::Deserializer for Deserializer {
                              -> Result<V::Value>
         where V: de::Visitor
     {
-        match self.exp {
-            Sexp::List(ref v) => {
-                // we don't mind if fields are missing
-                if v.len() < 1 {
-                    return Err(Error::Decoder(format!("missing struct name {} in {}",
-                                                      name,
-                                                      self.exp)));
-                }
-                match v[0] {
-                    Sexp::String(ref name2) => {
-                        let name2 = name2.to_lowercase();
-                        let name = name.to_lowercase();
-                        if name != name2 {
-                            return Err(Error::Decoder(format!("expecting name {} got {} in {}",
-                                                              name,
-                                                              name2,
-                                                              self.exp)));
-                        }
-                        visitor.visit_map(StructVisitor::new(v))
-                    }
-                    _ => {
-                        Err(Error::Decoder(format!("expecting string as first element of list \
-                                                    got {}",
-                                                   self.exp)))
-                    }
-                }
-            }
-            _ => Err(Error::Decoder(format!("expecting list got {}", self.exp))),
+        let v = try!(self.exp.take_list());
+        if v.len() < 1 {
+            return Err(Error::Decoder(format!("missing struct name {} in {:?}",
+                                              name,
+                                              v)));
         }
+        let name2 = try!(v[0].string()).to_lowercase();
+        let name = name.to_lowercase();
+        if name != name2 {
+            return Err(Error::Decoder(format!("expecting name {} got {} in {}",
+                                              name,
+                                              name2,
+                                              self.exp)));
+        }
+        visitor.visit_map(StructVisitor::new(v))
     }
 
     fn deserialize_seq<V>(&mut self, mut visitor: V) -> Result<V::Value>
         where V: de::Visitor
     {
-        match self.exp {
-            Sexp::List(ref v) => visitor.visit_seq(SeqVisitor::new(v, false)),
-            _ => Err(Error::Decoder(format!("expecting seq got {}", self.exp))),
-        }
+        let v = try!(self.exp.take_list());
+        visitor.visit_seq(SeqVisitor::new(v, false))
     }
 
     /// Parses a newtype struct as the underlying value.
@@ -169,13 +135,13 @@ impl de::Deserializer for Deserializer {
     }
 }
 
-struct SeqVisitor<'a> {
-    seq: &'a Vec<Sexp>,
+struct SeqVisitor {
+    seq: Vec<Sexp>,
     i: usize,
 }
 
-impl<'a> SeqVisitor<'a> {
-    fn new(seq: &'a Vec<Sexp>, skip: bool) -> Self {
+impl SeqVisitor {
+    fn new(seq: Vec<Sexp>, skip: bool) -> Self {
         let i = if skip {
             1
         } else {
@@ -185,7 +151,7 @@ impl<'a> SeqVisitor<'a> {
     }
 }
 
-impl<'a> de::SeqVisitor for SeqVisitor<'a> {
+impl de::SeqVisitor for SeqVisitor {
     type Error = Error;
 
     fn visit<T>(&mut self) -> Result<Option<T>>
@@ -194,9 +160,10 @@ impl<'a> de::SeqVisitor for SeqVisitor<'a> {
         if self.i >= self.seq.len() {
             return Ok(None);
         }
-        let ref t = self.seq[self.i];
+        let mut t = Sexp::Empty;
+        mem::swap(&mut t, &mut self.seq[self.i]);
         self.i += 1;
-        de::Deserialize::deserialize(&mut Deserializer::new(t.clone())).map(Some)
+        de::Deserialize::deserialize(&mut Deserializer::new(t)).map(Some)
     }
 
     fn end(&mut self) -> Result<()> {
@@ -204,14 +171,14 @@ impl<'a> de::SeqVisitor for SeqVisitor<'a> {
     }
 }
 
-struct StructVisitor<'a> {
-    seq: &'a Vec<Sexp>,
+struct StructVisitor {
+    seq: Vec<Sexp>,
     i: usize,
     value: Option<Sexp>,
 }
 
-impl<'a> StructVisitor<'a> {
-    fn new(seq: &'a Vec<Sexp>) -> Self {
+impl<'a> StructVisitor {
+    fn new(seq: Vec<Sexp>) -> Self {
         StructVisitor {
             seq: seq,
             i: 1,
@@ -220,7 +187,7 @@ impl<'a> StructVisitor<'a> {
     }
 }
 
-impl<'a> de::MapVisitor for StructVisitor<'a> {
+impl de::MapVisitor for StructVisitor {
     type Error = Error;
 
     fn visit_key<K>(&mut self) -> Result<Option<K>>
@@ -229,31 +196,32 @@ impl<'a> de::MapVisitor for StructVisitor<'a> {
         if self.i >= self.seq.len() {
             return Ok(None);
         }
-        let ref exp = self.seq[self.i];
+        let mut exp = Sexp::Empty;
+        mem::swap(&mut exp, &mut self.seq[self.i]);
         self.i += 1;
-        match *exp {
-            Sexp::List(ref v) => {
-                if v.len() != 2 {
-                    return Err(Error::Decoder("can't decode as map 1".into()));
-                }
-                if let Ok(_) = v[0].string() {
-                    self.value = Some(v[1].clone());
-                    de::Deserialize::deserialize(&mut Deserializer::new(v[0].clone())).map(Some)
-                } else {
-                    return Err(Error::Decoder(format!("key is not a string: {}", v[0])));
-                }
-            }
-            _ => Err(Error::Decoder("can't decode as map 3".into())),
+        let mut v = try!(exp.take_list());
+        if v.len() != 2 {
+            return Err(Error::Decoder("can't decode as map 1".into()));
+        }
+        if let Ok(_) = v[0].string() {
+            let mut value = Sexp::Empty;
+            mem::swap(&mut value, &mut v[1]);
+            self.value = Some(value);
+            let mut key = Sexp::Empty;
+            mem::swap(&mut key, &mut v[0]);
+            de::Deserialize::deserialize(&mut Deserializer::new(key)).map(Some)
+        } else {
+            return Err(Error::Decoder(format!("key is not a string: {}", v[0])));
         }
     }
 
     fn visit_value<V>(&mut self) -> Result<V>
         where V: de::Deserialize
     {
-        if let Some(ref v) = self.value {
-            de::Deserialize::deserialize(&mut Deserializer::new(v.clone()))
-        } else {
-            panic!("must call visit_key before visit_value")
+        let vo = self.value.take();
+        match vo {
+            Some(v) => de::Deserialize::deserialize(&mut Deserializer::new(v)),
+            None => Err(Error::Decoder(format!("missing value!"))),
         }
     }
 
