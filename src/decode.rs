@@ -142,7 +142,7 @@ impl de::Deserializer for Deserializer {
         {
             if self.exp.is_list() {
                 let v = try!(self.exp.list()); // Ok
-                if v.len() > 1 {
+                if v.len() > 2 {
                     if v[0].is_string() {
                         let s = try!(v[0].string());
                         if name.as_str() == s.as_str() {
