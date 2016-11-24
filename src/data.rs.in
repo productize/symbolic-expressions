@@ -56,9 +56,30 @@ pub mod test {
         pub decodetuplestruct:DecodeTupleStruct,
     }
 
-    #[derive(Deserialize, Debug, PartialEq)]
+    /// Test structure
+    #[derive(Deserialize, Serialize, Debug, PartialEq)]
     pub enum DecodeEnum {
+        /// One
         One,
+        /// Two
         Two,
     }
+
+    /// Test structure
+    #[derive(Deserialize, Debug, PartialEq)]
+    pub enum DecodeEnum2 {
+        /// One
+        One,
+        /// Two
+        Two(i64),
+    }
+
+       /// Test structure
+    #[derive(Deserialize, Debug, PartialEq)]
+    pub enum DecodeEnum3 {
+        /// One
+        One,
+        /// Two
+        Two(Planet),
+    } 
 }
