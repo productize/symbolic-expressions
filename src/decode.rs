@@ -82,7 +82,7 @@ impl de::Deserializer for Deserializer {
             return Err(Error::Decoder(format!("expecting {} elements for tuple struct \
                                                in {}",
                                               len,
-                                              self.exp)));
+                                              Sexp::List(v))));
         }
         let name2 = try!(v[0].string()).to_lowercase();
         let name = name.to_lowercase();
@@ -90,7 +90,7 @@ impl de::Deserializer for Deserializer {
             return Err(Error::Decoder(format!("expecting name {} got {} in {}",
                                               name,
                                               name2,
-                                              self.exp)));
+                                              Sexp::List(v))));
         }
         visitor.visit_seq(SeqVisitor::new(v, true))
     }
