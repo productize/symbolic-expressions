@@ -135,12 +135,19 @@ impl ser::Serializer for Serializer {
 
     fn serialize_newtype_struct<T>(
         &mut self,
-        _name: &'static str,
+        name: &'static str,
         value: T
     ) -> Result<()>
         where T: ser::Serialize,
     {
-        value.serialize(self)
+        let name:String = name.into();
+        let name = name.to_lowercase();
+        let mut value = try!(to_sexp(value));
+        let mut v = try!(value.take_list());
+        let mut v2 = vec![Sexp::String(name)];
+        v2.append(&mut v);
+        self.exp = Sexp::List(v2);
+        Ok(())
     }
 
     fn serialize_newtype_variant<T>(

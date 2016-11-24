@@ -38,6 +38,7 @@ impl de::Deserializer for Deserializer {
     fn deserialize<V>(&mut self, visitor: V) -> Result<V::Value>
         where V: de::Visitor
     {
+        //println!("deserialize: {}", self.exp);
         if self.exp.is_string() {
             return self.deserialize_string(visitor)
         }
@@ -72,7 +73,11 @@ impl de::Deserializer for Deserializer {
                                    -> Result<V::Value>
         where V: de::Visitor
     {
-        let v = try!(self.exp.take_list());
+        //println!("des tuple struct: {}", self.exp);
+        let v = match self.exp.take_list() {
+            Ok(v) => v,
+            _ => return Err(Error::Decoder(format!("expecting list for tuple struct, got {}", self.exp))),
+        };
         if v.len() != len + 1 {
             return Err(Error::Decoder(format!("expecting {} elements for tuple struct \
                                                in {}",
@@ -97,7 +102,10 @@ impl de::Deserializer for Deserializer {
                              -> Result<V::Value>
         where V: de::Visitor
     {
-        let v = try!(self.exp.take_list());
+        let v = match self.exp.take_list() {
+            Ok(v) => v,
+            _ => return Err(Error::Decoder(format!("expecting list for deserialize struct, got {}", self.exp))),
+        };
         if v.len() < 1 {
             return Err(Error::Decoder(format!("missing struct name {} in {:?}",
                                               name,
@@ -117,14 +125,40 @@ impl de::Deserializer for Deserializer {
     fn deserialize_seq<V>(&mut self, mut visitor: V) -> Result<V::Value>
         where V: de::Visitor
     {
+        //println!("des seq: {}", self.exp);
         let v = try!(self.exp.take_list());
         visitor.visit_seq(SeqVisitor::new(v, false))
     }
 
-    /// Parses a newtype struct as the underlying value.
-    fn deserialize_newtype_struct<V>(&mut self, _name: &str, mut visitor: V) -> Result<V::Value>
+    fn deserialize_newtype_struct<V>(&mut self, name: &str, mut visitor: V) -> Result<V::Value>
         where V: de::Visitor
     {
+        //println!("des newtype: {} {}", name, self.exp);
+        // if the name is the first element of a list
+        // consider the list without the first element to be the
+        // content of the struct
+        let name = name.to_lowercase();
+        let mut found = false;
+        {
+            if self.exp.is_list() {
+                let v = try!(self.exp.list()); // Ok
+                if v.len() > 1 {
+                    if v[0].is_string() {
+                        let s = try!(v[0].string());
+                        if name.as_str() == s.as_str() {
+                            found = true;
+                        }
+                    }
+                }
+            }
+        }
+        if found {
+            let mut v = try!(self.exp.take_list());
+            v.remove(0);
+            let exp = Sexp::List(v);
+            return visitor.visit_newtype_struct(&mut Deserializer::new(exp))
+        }
+        // Parses a newtype struct as the underlying value.
         visitor.visit_newtype_struct(self)
     }
 

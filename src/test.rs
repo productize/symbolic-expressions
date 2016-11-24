@@ -402,3 +402,13 @@ fn test_decode_encode_enum3() {
     let f = encode::to_sexp(h).unwrap();
     assert_eq!(s,format!("{}", f));
 }
+
+#[test]
+fn test_decode_encode_wierd_list() {
+    let s = "(pts (xy -0.25 -1.15) (xy -0.25 -0.65) (xy 0.25 -0.65) (xy 0.25 -1.15) (xy -0.25 -1.15))";
+    let e = parser::parse_str(s).unwrap();
+    let h: Pts = decode::decode(e).unwrap();
+    println!("{:?}", h);
+    let f = encode::to_sexp(h).unwrap();
+    assert_eq!(s,format!("{}", f));
+}

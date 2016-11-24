@@ -74,12 +74,20 @@ pub mod test {
         Two(i64),
     }
 
-       /// Test structure
+    /// Test structure
     #[derive(Deserialize, Serialize, Debug, PartialEq)]
     pub enum DecodeEnum3 {
         /// One
         One,
         /// Two
         Two(Planet),
-    } 
+    }
+
+    /// Test structure
+    #[derive(Deserialize, Serialize, Debug, PartialEq)]
+    pub struct Xy(f64, f64);
+
+    /// Test structure
+    #[derive(Deserialize, Serialize, Debug, PartialEq)]
+    pub struct Pts(Vec<Xy>);
 }
