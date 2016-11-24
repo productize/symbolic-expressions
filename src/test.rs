@@ -367,38 +367,38 @@ fn test_decode_encode_enum_simplest() {
     let e = parser::parse_str(s).unwrap();
     let h: DecodeEnum = decode::decode(e.clone()).unwrap();
     assert_eq!(h, DecodeEnum::One);
-    //let f = encode::to_sexp(h).unwrap();
-    //assert_eq!(s,format!("{}", f));
+    let f = encode::to_sexp(h).unwrap();
+    assert_eq!(s,format!("{}", f));
 }
 
 
 #[test]
-fn test_decode_vec_enum() {
+fn test_decode_encode_vec_enum() {
     let s = "(one two)";
     let e = parser::parse_str(s).unwrap();
     let h: Vec<DecodeEnum> = decode::decode(e.clone()).unwrap();
     assert_eq!(h, vec![DecodeEnum::One, DecodeEnum::Two]);
-    //let f = encode::to_sexp(h).unwrap();
-    //assert_eq!(e,f);
+    let f = encode::to_sexp(h).unwrap();
+    assert_eq!(s,format!("{}", f));
 }
 
 
 #[test]
-fn test_decode_enum2() {
+fn test_decode_encode_enum2() {
     let s = "(one (two 42))";
     let e = parser::parse_str(s).unwrap();
     let h: Vec<DecodeEnum2> = decode::decode(e.clone()).unwrap();
     assert_eq!(h, vec![DecodeEnum2::One, DecodeEnum2::Two(42)]);
-    //let f = encode::to_sexp(h).unwrap();
-    //assert_eq!(e,f);
+    let f = encode::to_sexp(h).unwrap();
+    assert_eq!(s,format!("{}", f));
 }
 
 #[test]
-fn test_decode_enum3() {
+fn test_decode_encode_enum3() {
     let s = "(one (two (planet (size 42))))";
     let e = parser::parse_str(s).unwrap();
     let h: Vec<DecodeEnum3> = decode::decode(e.clone()).unwrap();
     assert_eq!(h, vec![DecodeEnum3::One, DecodeEnum3::Two(Planet{ size:42 })]);
-    //let f = encode::to_sexp(h).unwrap();
-    //assert_eq!(e,f);
+    let f = encode::to_sexp(h).unwrap();
+    assert_eq!(s,format!("{}", f));
 }

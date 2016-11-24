@@ -66,7 +66,7 @@ pub mod test {
     }
 
     /// Test structure
-    #[derive(Deserialize, Debug, PartialEq)]
+    #[derive(Deserialize, Serialize, Debug, PartialEq)]
     pub enum DecodeEnum2 {
         /// One
         One,
@@ -75,7 +75,7 @@ pub mod test {
     }
 
        /// Test structure
-    #[derive(Deserialize, Debug, PartialEq)]
+    #[derive(Deserialize, Serialize, Debug, PartialEq)]
     pub enum DecodeEnum3 {
         /// One
         One,

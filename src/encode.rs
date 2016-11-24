@@ -125,9 +125,12 @@ impl ser::Serializer for Serializer {
         &mut self,
         _name: &str,
         _variant_index: usize,
-        _variant: &str
+        variant: &str
     ) -> Result<()> {
-        Err(Error::Encoder("unsupported: unit variant".into()))
+        let mut s = String::new();
+        s.push_str(variant);
+        self.exp = Sexp::String(s.to_lowercase());
+        Ok(())
     }
 
     fn serialize_newtype_struct<T>(
@@ -144,12 +147,17 @@ impl ser::Serializer for Serializer {
         &mut self,
         _name: &str,
         _variant_index: usize,
-        _variant: &str,
-        _value: T
+        variant: &str,
+        value: T
     ) -> Result<()>
         where T: ser::Serialize,
     {
-        Err(Error::Encoder("unsupported: newtype variant".into()))
+        let mut s = String::new();
+        s.push_str(variant);
+        let name = Sexp::String(s.to_lowercase());
+        let value = try!(to_sexp(value));
+        self.exp = Sexp::List(vec![name, value]);
+        Ok(())
     }
 
     fn serialize_none(&mut self) -> Result<()> {

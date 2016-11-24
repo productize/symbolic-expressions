@@ -44,19 +44,6 @@ impl de::Deserializer for Deserializer {
         if self.exp.is_list() {
             return self.deserialize_seq(visitor)
         }
-        /*
-        if self.exp.is_list() {
-            let v = try!(self.exp.take_list());
-            let name = unsafe {
-                let s = try!(v[0].string());
-                let ret = mem::transmute(&s as &str);
-                mem::forget(s);
-                ret
-            };
-            let len = v.len() - 1;
-            self.exp = Sexp::List(v);
-            return self.deserialize_tuple_struct(name, len, visitor)
-        }*/
         Err(Error::Decoder(format!("expecting specific deserializer to be called for {}", self.exp)))
     }
 
@@ -152,7 +139,7 @@ impl de::Deserializer for Deserializer {
                            variants: &'static [&'static str],
                            mut visitor: V)
                            -> Result<V::Value> where V: de::EnumVisitor {
-        println!("Variant: name: {}", name);
+        //println!("Variant: name: {}", name);
         let mut exp = self.take();
         if exp.is_list() {
             let (found, found_name, v) = {
@@ -177,7 +164,7 @@ impl de::Deserializer for Deserializer {
             };
             if found {
                 let l = Sexp::List(v);
-                println!(".... going for {}", l);
+                //println!(".... going for {}", l);
                 visitor.visit(VariantVisitor::new(l))
             } else {
                 Err(Error::Decoder(format!("unknown variant {} in {}", found_name, name)))
@@ -235,7 +222,7 @@ impl de::SeqVisitor for SeqVisitor {
         if self.i >= self.seq.len() {
             return Ok(None);
         }
-        println!("seq Visit {}", self.i);
+        //println!("seq Visit {}", self.i);
         let mut t = Sexp::Empty;
         mem::swap(&mut t, &mut self.seq[self.i]);
         self.i += 1;
@@ -366,7 +353,7 @@ impl de::VariantVisitor for VariantVisitor {
     
     fn visit_variant<V>(&mut self) -> Result<V>
         where V: de::Deserialize {
-        println!("VariantVisitor: {}", self.exp);
+        //println!("VariantVisitor: {}", self.exp);
         match self.exp {
             Sexp::String(_) => {
                 de::Deserialize::deserialize(&mut Deserializer::new(self.exp.clone()))
@@ -422,7 +409,7 @@ impl de::VariantVisitor for VariantVisitor {
     ) -> Result<V::Value>
         where V: de::Visitor,
     {
-        println!("VariantVisitor::visit_struct: {}", self.exp);
+        //println!("VariantVisitor::visit_struct: {}", self.exp);
         de::Deserializer::deserialize(&mut Deserializer::new(self.take()),
                                       visitor)
     }
