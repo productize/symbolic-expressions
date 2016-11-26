@@ -270,7 +270,7 @@ fn test_decode_encode_vec_string_int() {
 
 #[test]
 fn test_decode_encode_struct_nested() {
-    let s = "(decodenested (world (1 2 3)) (mars (planet (size 7))))";
+    let s = "(decodenested (world 1 2 3) (mars (planet (size 7))))";
     let e = parser::parse_str(s).unwrap();
     let h: DecodeNested = decode::decode(e.clone()).unwrap();
     let i = DecodeNested {
@@ -285,7 +285,7 @@ fn test_decode_encode_struct_nested() {
 #[test]
 #[should_panic]
 fn test_decode_encode_struct_nested_tuple_struct() {
-    let s = "(decodenestedtuplestruct (world (1 2 3)) (decodetuplestruct (decodetuplestruct 7 foo)))";
+    let s = "(decodenestedtuplestruct (world 1 2 3) (decodetuplestruct (decodetuplestruct 7 foo)))";
     let e = parser::parse_str(s).unwrap();
     let h: DecodeNestedTupleStruct = decode::decode(e.clone()).unwrap();
     let i = DecodeNestedTupleStruct {
@@ -299,7 +299,7 @@ fn test_decode_encode_struct_nested_tuple_struct() {
 
 #[test]
 fn test_decode_encode_struct_nested_tuple_struct2() {
-    let s = "(decodenestedtuplestruct (world (1 2 3)) (decodetuplestruct 7 foo))";
+    let s = "(decodenestedtuplestruct (world 1 2 3) (decodetuplestruct 7 foo))";
     let e = parser::parse_str(s).unwrap();
     let h: DecodeNestedTupleStruct = decode::decode(e.clone()).unwrap();
     let i = DecodeNestedTupleStruct {
@@ -414,6 +414,7 @@ fn test_decode_encode_wierd_list() {
 }
 
 #[test]
+#[should_panic]
 fn test_decode_encode_member_list() {
     let s = "(newlist (list (4 5 7)))";
     let e = parser::parse_str(s).unwrap();

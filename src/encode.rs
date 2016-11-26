@@ -319,7 +319,7 @@ impl ser::Serializer for Serializer {
     {
         let mut v = vec![];
 
-        let value = try!(to_sexp(value));
+        let mut value = to_sexp(value)?;
         
         // don't add empty values
         if value == Sexp::Empty {
@@ -330,11 +330,12 @@ impl ser::Serializer for Serializer {
         // first element name as the containing struct
         // push the elements directly in the containing List
         if value.is_list() {
-            let x = try!(value.list()); // Ok
+            let x = value.list()?; // Ok
+            println!("x: {:?}", x);
             if !x.is_empty() && x.len() >= 2 {
                 if x[0].is_string() {
                     let ok = {
-                        let name = try!(x[0].string()); // Ok
+                        let name = x[0].string()?; // Ok
                         key == name.as_str()
                     };
                     if ok {
@@ -346,7 +347,16 @@ impl ser::Serializer for Serializer {
         }
         
         v.push(Sexp::String(key.into()));
-        v.push(value);
+        // flatten value if appropriate... should only happen for Vec perhaps
+        // TODO
+        if value.is_list() {
+            let x = value.take_list()?;
+            for y in &x {
+                v.push(y.clone()) // TODO optimize
+            }
+        } else {
+            v.push(value);
+        }
         state.push(Sexp::List(v));
         Ok(())
     }
