@@ -412,3 +412,23 @@ fn test_decode_encode_wierd_list() {
     let f = encode::to_sexp(h).unwrap();
     assert_eq!(s,format!("{}", f));
 }
+
+#[test]
+fn test_decode_encode_member_list() {
+    let s = "(newlist (list (4 5 7)))";
+    let e = parser::parse_str(s).unwrap();
+    let h: NewList = decode::decode(e).unwrap();
+    println!("{:?}", h);
+    let f = encode::to_sexp(h).unwrap();
+    assert_eq!(s,format!("{}", f));
+}
+
+#[test]
+fn test_decode_encode_member_list_compacted() {
+    let s = "(newlist (list 4 5 7))";
+    let e = parser::parse_str(s).unwrap();
+    let h: NewList = decode::decode(e).unwrap();
+    println!("{:?}", h);
+    let f = encode::to_sexp(h).unwrap();
+    assert_eq!(s,format!("{}", f));
+}

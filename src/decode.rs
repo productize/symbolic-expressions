@@ -17,13 +17,18 @@ pub fn decode<T: serde::Deserialize>(exp: Sexp) -> Result<T> {
 
 struct Deserializer {
     pub exp: Sexp,
+    pub name: Option<String>,
 }
 
 impl Deserializer {
     pub fn new(exp: Sexp) -> Deserializer {
-        Deserializer { exp: exp }
+        Deserializer { exp: exp, name:None }
     }
     
+    pub fn name(exp: Sexp, name:Option<String>) -> Deserializer {
+        Deserializer { exp: exp, name:name }
+    }
+
     pub fn take(&mut self) -> Sexp {
         let mut exp = Sexp::Empty;
         mem::swap(&mut exp, &mut self.exp);
@@ -52,7 +57,7 @@ impl de::Deserializer for Deserializer {
     fn deserialize_string<V>(&mut self, mut visitor: V) -> Result<V::Value>
         where V: de::Visitor
     {
-        visitor.visit_string(try!(self.exp.take_string()))
+        visitor.visit_string(self.exp.take_string()?)
     }
 
     /// the empty symbolic-expression
@@ -92,7 +97,7 @@ impl de::Deserializer for Deserializer {
                                               name2,
                                               Sexp::List(v))));
         }
-        visitor.visit_seq(SeqVisitor::new(v, true))
+        visitor.visit_seq(SeqVisitor::skip(v))
     }
 
     fn deserialize_struct<V>(&mut self,
@@ -125,9 +130,27 @@ impl de::Deserializer for Deserializer {
     fn deserialize_seq<V>(&mut self, mut visitor: V) -> Result<V::Value>
         where V: de::Visitor
     {
-        //println!("des seq: {}", self.exp);
-        let v = try!(self.exp.take_list());
-        visitor.visit_seq(SeqVisitor::new(v, false))
+        println!("des seq: {}", self.exp);
+        let v = self.exp.take_list()?;
+        let mut skip = false;
+        match self.name.take() {
+            Some(name) => {
+                if !v.is_empty() {
+                    if v[0].is_string() {
+                        let s = v[0].string()?;
+                        if s.as_str() == name.as_str() {
+                            skip = true;
+                        }
+                    }
+                }
+            },
+            None => (),
+        }
+        if skip {
+            visitor.visit_seq(SeqVisitor::skip(v))
+        } else {
+            visitor.visit_seq(SeqVisitor::new(v))
+        }
     }
 
     fn deserialize_newtype_struct<V>(&mut self, name: &str, mut visitor: V) -> Result<V::Value>
@@ -142,13 +165,14 @@ impl de::Deserializer for Deserializer {
         {
             if self.exp.is_list() {
                 let v = try!(self.exp.list()); // Ok
-                if v.len() > 2 {
+                if v.len() >= 2 {
                     if v[0].is_string() {
                         let s = try!(v[0].string());
                         if name.as_str() == s.as_str() {
                             found = true;
                         }
                     }
+                } else if v.len() == 2 {
                 }
             }
         }
@@ -237,13 +261,11 @@ struct SeqVisitor {
 }
 
 impl SeqVisitor {
-    fn new(seq: Vec<Sexp>, skip: bool) -> Self {
-        let i = if skip {
-            1
-        } else {
-            0
-        };
-        SeqVisitor { seq: seq, i: i }
+    fn new(seq: Vec<Sexp>) -> Self {
+        SeqVisitor { seq: seq, i: 0 }
+    }
+    fn skip(seq: Vec<Sexp>) -> Self {
+        SeqVisitor { seq: seq, i: 1 }
     }
 }
 
@@ -272,6 +294,7 @@ struct StructVisitor {
     seq: Vec<Sexp>,
     i: usize,
     value: Option<Sexp>,
+    key:Option<String>,
 }
 
 impl<'a> StructVisitor {
@@ -280,6 +303,7 @@ impl<'a> StructVisitor {
             seq: seq,
             i: 1,
             value: None,
+            key: None,
         }
     }
 }
@@ -302,6 +326,7 @@ impl de::MapVisitor for StructVisitor {
         }
         if v[0].is_string() {
             if v.len() == 2 {
+                self.key = Some(v[0].string()?.clone());
                 let mut value = Sexp::Empty;
                 mem::swap(&mut value, &mut v[1]);
                 self.value = Some(value);
@@ -310,6 +335,7 @@ impl de::MapVisitor for StructVisitor {
                 de::Deserialize::deserialize(&mut Deserializer::new(key)).map(Some)
             } else {
                 // deserialize whole element, which could be a tuple struct
+                self.key = Some(v[0].string()?.clone());
                 let key = v[0].clone();
                 self.value = Some(Sexp::List(v));
                 de::Deserialize::deserialize(&mut Deserializer::new(key)).map(Some)
@@ -323,8 +349,10 @@ impl de::MapVisitor for StructVisitor {
         where V: de::Deserialize
     {
         let vo = self.value.take();
+        let ko = self.key.take();
+        println!("Map value... {:?} {:?}", ko, vo);
         match vo {
-            Some(v) => de::Deserialize::deserialize(&mut Deserializer::new(v)),
+            Some(v) => de::Deserialize::deserialize(&mut Deserializer::name(v, ko)),
             None => Err(Error::Decoder(format!("missing value!"))),
         }
     }
@@ -419,7 +447,7 @@ impl de::VariantVisitor for VariantVisitor {
         match exp {
             Sexp::String(_) => de::Deserialize::deserialize(&mut Deserializer::new(exp)),
             Sexp::List(_) => {
-                let v = try!(exp.take_list());
+                let v = exp.take_list()?;
                 if v.len() < 2 {
                     return Err(Error::Decoder(format!("not enough elements in variant: {:?}", v)))
                 }
