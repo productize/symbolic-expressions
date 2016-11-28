@@ -122,7 +122,7 @@ impl de::Deserializer for Deserializer {
             return Err(Error::Decoder(format!("expecting name {} got {} in {}",
                                               name,
                                               name2,
-                                              self.exp)));
+                                              Sexp::List(v))));
         }
         visitor.visit_map(StructVisitor::new(v, fields))
     }
