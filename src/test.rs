@@ -425,7 +425,7 @@ fn test_decode_encode_member_list() {
 }
 
 #[test]
-fn test_decode_encode_member_list_compacted() {
+fn test_decode_encode_member_list_compacted_in_struct() {
     let s = "(newlist (list 4 5 7))";
     let e = parser::parse_str(s).unwrap();
     let h: NewList = decode::decode(e).unwrap();

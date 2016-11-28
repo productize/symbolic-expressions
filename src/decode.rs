@@ -182,7 +182,7 @@ impl de::Deserializer for Deserializer {
             let exp = Sexp::List(v);
             return visitor.visit_newtype_struct(&mut Deserializer::new(exp))
         }
-        // Parses a newtype struct as the underlying value.
+        // otherwise parses a newtype struct as the underlying value.
         visitor.visit_newtype_struct(self)
     }
 

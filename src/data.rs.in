@@ -96,4 +96,10 @@ pub mod test {
     pub struct NewList {
         list:Vec<i64>,
     }
+
+    /// Test structure
+    #[derive(Deserialize, Serialize, Debug, PartialEq)]
+    pub struct NewList2 (
+        Vec<i64>,
+    );
 }
