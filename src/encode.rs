@@ -10,12 +10,15 @@ use error::{Result, Error};
 pub struct Serializer {
     /// the symbolic expression being constructed
     exp: Sexp,
+    /// indication to the creator of the Serializer that we serialized something from a sequence
+    was_seq: bool,
 }
 
 impl Serializer {
     fn new() -> Self {
         Serializer {
             exp: Sexp::Empty,
+            was_seq: false,
         }
     }
 
@@ -178,6 +181,7 @@ impl ser::Serializer for Serializer {
     }
 
     fn serialize_seq(&mut self, _len: Option<usize>) -> Result<Vec<Sexp>> {
+        self.was_seq = true;
         Ok(vec![])
     }
 
@@ -188,7 +192,7 @@ impl ser::Serializer for Serializer {
     ) -> Result<()>
         where T: ser::Serialize,
     {
-        state.push(try!(to_sexp(elem)));
+        state.push(to_sexp(elem)?);
         Ok(())
     }
 
@@ -319,7 +323,10 @@ impl ser::Serializer for Serializer {
     {
         let mut v = vec![];
 
-        let mut value = to_sexp(value)?;
+        let mut ser = Serializer::new();
+        try!(value.serialize(&mut ser));
+        let was_seq = ser.was_seq;
+        let mut value = ser.take();
         
         // don't add empty values
         if value == Sexp::Empty {
@@ -349,7 +356,7 @@ impl ser::Serializer for Serializer {
         v.push(Sexp::String(key.into()));
         // flatten value if appropriate... should only happen for Vec perhaps
         // TODO
-        if value.is_list() {
+        if was_seq {
             let x = value.take_list()?;
             for y in &x {
                 v.push(y.clone()) // TODO optimize
