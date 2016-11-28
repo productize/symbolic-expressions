@@ -433,3 +433,13 @@ fn test_decode_encode_member_list_compacted_in_struct() {
     let f = encode::to_sexp(h).unwrap();
     assert_eq!(s,format!("{}", f));
 }
+
+#[test]
+fn test_decode_encode_special_handling() {
+    let s = "(special reference U1 (xy 2.3 0) hide)";
+    let e = parser::parse_str(s).unwrap();
+    let h: Special = decode::decode(e).unwrap();
+    println!("{:?}", h);
+    let f = encode::to_sexp(h).unwrap();
+    assert_eq!(s,format!("{}", f));
+}

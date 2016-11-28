@@ -102,7 +102,7 @@ impl de::Deserializer for Deserializer {
 
     fn deserialize_struct<V>(&mut self,
                              name: &'static str,
-                             _fields: &'static [&'static str],
+                             fields: &'static [&'static str],
                              mut visitor: V)
                              -> Result<V::Value>
         where V: de::Visitor
@@ -124,7 +124,7 @@ impl de::Deserializer for Deserializer {
                                               name2,
                                               self.exp)));
         }
-        visitor.visit_map(StructVisitor::new(v))
+        visitor.visit_map(StructVisitor::new(v, fields))
     }
 
     fn deserialize_seq<V>(&mut self, mut visitor: V) -> Result<V::Value>
@@ -295,15 +295,17 @@ struct StructVisitor {
     i: usize,
     value: Option<Sexp>,
     key:Option<String>,
+    fields:&'static [&'static str],
 }
 
 impl<'a> StructVisitor {
-    fn new(seq: Vec<Sexp>) -> Self {
+    fn new(seq: Vec<Sexp>, fields:&'static [&'static str]) -> Self {
         StructVisitor {
             seq: seq,
             i: 1,
             value: None,
             key: None,
+            fields: fields,
         }
     }
 }
@@ -318,8 +320,25 @@ impl de::MapVisitor for StructVisitor {
             return Ok(None);
         }
         let mut exp = Sexp::Empty;
+        let field = if self.fields.len() > self.i-1 {
+            Some(self.fields[self.i-1])
+        } else {
+            None
+        };
         mem::swap(&mut exp, &mut self.seq[self.i]);
         self.i += 1;
+        // if we're a string and the fieldname ends in _ just take the string
+        if exp.is_string() && !field.is_none() {
+            let field = field.unwrap();
+            let field = String::from(field);
+            if let Some(c) = field.chars().last() {
+                if c == '_' {
+                    let key = Sexp::String(field);
+                    self.value = Some(exp);
+                    return de::Deserialize::deserialize(&mut Deserializer::new(key)).map(Some)
+                }
+            }
+        }
         let mut v = try!(exp.take_list());
         if v.len() < 2 {
             return Err(Error::Decoder(format!("can't decode as map: {:?}", v)));

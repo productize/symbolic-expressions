@@ -324,13 +324,22 @@ impl ser::Serializer for Serializer {
         let mut v = vec![];
 
         let mut ser = Serializer::new();
-        try!(value.serialize(&mut ser));
+        value.serialize(&mut ser)?;
         let was_seq = ser.was_seq;
         let mut value = ser.take();
         
         // don't add empty values
         if value == Sexp::Empty {
             return Ok(())
+        }
+        let key = String::from(key);
+        if value.is_string() {
+            if let Some(c) = key.chars().last() {
+                if c == '_' {
+                    state.push(value);
+                    return Ok(())
+                }
+            }
         }
         
         // check if the value is a list that has the same
