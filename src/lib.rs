@@ -4,14 +4,6 @@
 
 #![warn(missing_docs)]
 
-#![cfg_attr(feature = "serde_derive", feature(proc_macro))]
-#[cfg(feature = "serde_derive")]
-#[macro_use]
-extern crate serde_derive;
-
-#[macro_use]
-extern crate serde;
-
 pub use error::*;
 pub use sexp::*;
 
@@ -27,15 +19,6 @@ pub mod ser;
 
 pub use formatter::Rules;
 pub use formatter::Formatter;
-
-/// serde symbolic-expression decoding code: symbolic-expression -> rust
-pub mod decode;
-
-/// serde symbolic-expression encoding code: rust -> symbolic-expression
-pub mod encode;
-
-/// serde-enabled data structures used in testing
-pub mod data;
 
 #[cfg(test)]
 mod test;
