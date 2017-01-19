@@ -176,7 +176,7 @@ impl Sexp {
     /// access the symbolic-expression as if it is a String
     /// that is a f64
     pub fn f(&self) -> Result<f64> {
-        let s = try!(self.string());
+        let s = self.string()?;
         match f64::from_str(s) {
             Ok(f) => Ok(f),
             _ => str_error(format!("Error parsing as float {}", self)),
@@ -186,7 +186,7 @@ impl Sexp {
     /// access the symbolic-expression as if it is a String
     /// that is an i64
     pub fn i(&self) -> Result<i64> {
-        let s = try!(self.string());
+        let s = self.string()?;
         match i64::from_str(s) {
             Ok(f) => Ok(f),
             _ => str_error(format!("Error parsing as int {}", self)),
@@ -196,9 +196,9 @@ impl Sexp {
     /// access the symbolic-expression as if it is a List
     /// assuming the first element is a String and return that
     pub fn list_name(&self) -> Result<&String> {
-        let l = try!(self.list());
+        let l = self.list()?;
         let l = &l[..];
-        let a = try!(l[0].string());
+        let a = l[0].string()?;
         Ok(a)
     }
 
@@ -206,9 +206,9 @@ impl Sexp {
     /// where the name is provided and returns the remaining elements
     /// after the name as a slice
     pub fn slice_atom(&self, s: &str) -> Result<&[Sexp]> {
-        let v = try!(self.list());
+        let v = self.list()?;
         let v2 = &v[..];
-        let st = try!(v2[0].string());
+        let st = v2[0].string()?;
         if st != s {
             return str_error(format!("list {} doesn't start with {}, but with {}", self, s, st));
         };
@@ -219,36 +219,36 @@ impl Sexp {
     /// with two elements where the name is provided and returns
     /// the next element in the list
     pub fn named_value(&self, s: &str) -> Result<&Sexp> {
-        let v = try!(self.list());
+        let v = self.list()?;
         if v.len() != 2 {
             return str_error(format!("list {} is not a named_value", s));
         }
-        let l = try!(self.slice_atom(s));
+        let l = self.slice_atom(s)?;
         Ok(&l[0])
     }
 
     /// as named_value but converted to i64
     pub fn named_value_i(&self, s: &str) -> Result<i64> {
-        try!(self.named_value(s)).i()
+        self.named_value(s)?.i()
     }
 
     /// as named_value but converted to f64
     pub fn named_value_f(&self, s: &str) -> Result<f64> {
-        try!(self.named_value(s)).f()
+        self.named_value(s)?.f()
     }
 
     /// as named_value but converted to String
     pub fn named_value_string(&self, s: &str) -> Result<&String> {
-        try!(self.named_value(s)).string()
+        self.named_value(s)?.string()
     }
 
     /// get the symbolic-expression as a list which starts
     /// with a string that indicates the name and has num more
     /// elements, returns those elements
     pub fn slice_atom_num(&self, s: &str, num: usize) -> Result<&[Sexp]> {
-        let v = try!(self.list());
+        let v = self.list()?;
         let v2 = &v[..];
-        let st = try!(v2[0].string());
+        let st = v2[0].string()?;
         if st != s {
             return str_error(format!("list doesn't start with {}, but with {}", s, st));
         };
@@ -267,13 +267,13 @@ impl fmt::Display for Sexp {
         match *self {
             Sexp::String(ref s) => write!(f, "{}", encode_string(s)),
             Sexp::List(ref v) => {
-                try!(write!(f, "("));
+                write!(f, "(")?;
                 let l = v.len();
                 for (i, x) in v.iter().enumerate() {
                     if i < l - 1 {
-                        try!(write!(f, "{} ", x));
+                        write!(f, "{} ", x)?;
                     } else {
-                        try!(write!(f, "{}", x));
+                        write!(f, "{}", x)?;
                     }
                 }
                 write!(f, ")")

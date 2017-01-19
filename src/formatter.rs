@@ -75,9 +75,9 @@ impl Formatter for RulesFormatter {
             if let Sexp::String(ref s) = **sexp {
                 let s: &str = s;
                 if let Some(&i) = self.indent_before.get(s) {
-                    try!(writer.write_all(b"\n"));
+                    writer.write_all(b"\n")?;
                     for _ in 0..i {
-                        try!(writer.write_all(&self.indent));
+                        writer.write_all(&self.indent)?;
                     }
                 }
             }

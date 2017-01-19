@@ -19,12 +19,12 @@ struct Parser {
 
 impl Parser {
     fn peek(&self) -> Result<char> {
-        try!(self.fail_on_eof());
+        self.fail_on_eof()?;
         Ok(self.data[self.position])
     }
 
     fn get(&mut self) -> Result<char> {
-        try!(self.fail_on_eof());
+        self.fail_on_eof()?;
         let c = self.data[self.position];
         self.position += 1;
         self.line_position += 1;
@@ -57,7 +57,7 @@ impl Parser {
     }
 
     fn eat_char(&mut self, c: char) -> Result<()> {
-        let c2 = try!(self.get());
+        let c2 = self.get()?;
         if c != c2 {
             self.parse_error(&format!("expected {} got {}", c, c2))
         } else {
@@ -93,7 +93,7 @@ pub fn parse_str(sexp: &str) -> Result<Sexp> {
 
 fn parse(parser: &mut Parser) -> Result<Sexp> {
     parser.eat_space();
-    let c = try!(parser.peek());
+    let c = parser.peek()?;
     if c == '(' {
         parse_list(parser)
     } else if c == '"' {
@@ -106,44 +106,44 @@ fn parse(parser: &mut Parser) -> Result<Sexp> {
 }
 
 fn parse_list(parser: &mut Parser) -> Result<Sexp> {
-    try!(parser.eat_char('('));
+    parser.eat_char('(')?;
     let mut v = vec![];
     while !parser.eof() {
-        let c = try!(parser.peek());
+        let c = parser.peek()?;
         if c == ')' {
             break;
         } else if c == ' ' || c == '\t' || c == '\r' || c == '\n' {
             parser.inc()
         } else {
-            let s = try!(parse(parser));
+            let s = parse(parser)?;
             v.push(s)
         }
     }
-    try!(parser.eat_char(')'));
+    parser.eat_char(')')?;
     parser.eat_space();
     Ok(Sexp::List(v))
 }
 
 fn parse_quoted_string(parser: &mut Parser) -> Result<Sexp> {
     let mut s = String::new();
-    try!(parser.eat_char('"'));
+    parser.eat_char('"')?;
     // note that escaped quotes are actually not allowed
     while !parser.eof() {
-        let c = try!(parser.peek());
+        let c = parser.peek()?;
         if c == '"' {
             break;
         }
         s.push(c);
         parser.inc()
     }
-    try!(parser.eat_char('"'));
+    parser.eat_char('"')?;
     Ok(Sexp::String(s))
 }
 
 fn parse_bare_string(parser: &mut Parser) -> Result<Sexp> {
     let mut s = String::new();
     while !parser.eof() {
-        let c = try!(parser.peek());
+        let c = parser.peek()?;
         if c == ' ' || c == '(' || c == ')' || c == '\r' || c == '\n' {
             break;
         }
@@ -154,17 +154,17 @@ fn parse_bare_string(parser: &mut Parser) -> Result<Sexp> {
 }
 
 fn read_file(name: &str) -> result::Result<String, io::Error> {
-    let mut f = try!(File::open(name));
+    let mut f = File::open(name)?;
     let mut s = String::new();
-    try!(f.read_to_string(&mut s));
+    f.read_to_string(&mut s)?;
     Ok(s)
 }
 
 /// parse a file as a symbolic-expression
 pub fn parse_file(name: &str) -> Result<Sexp> {
-    let s = try!(match read_file(name) {
+    let s = match read_file(name) {
         Ok(s) => Ok(s),
         Err(x) => str_error(format!("{:?}", x)),
-    });
+    }?;
     parse_str(&s[..])
 }
