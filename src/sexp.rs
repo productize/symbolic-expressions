@@ -135,7 +135,7 @@ impl Sexp {
             _ => str_error(format!("Not a string: {}", e)),
         }
     }
-    
+
     /// create a symbolic-expression via the IntoSexp trait
     pub fn from<T: IntoSexp>(t: &T) -> Sexp {
         t.into_sexp()
@@ -172,7 +172,7 @@ impl Sexp {
             _ => false,
         }
     }
-    
+
     /// access the symbolic-expression as if it is a String
     /// that is a f64
     pub fn f(&self) -> Result<f64> {

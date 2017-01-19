@@ -163,8 +163,9 @@ fn read_file(name: &str) -> result::Result<String, io::Error> {
 /// parse a file as a symbolic-expression
 pub fn parse_file(name: &str) -> Result<Sexp> {
     let s = match read_file(name) {
-        Ok(s) => Ok(s),
-        Err(x) => str_error(format!("{:?}", x)),
-    }?;
+            Ok(s) => Ok(s),
+            Err(x) => str_error(format!("{:?}", x)),
+        }
+        ?;
     parse_str(&s[..])
 }
