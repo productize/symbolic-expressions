@@ -13,6 +13,36 @@ pub trait IntoSexp {
     fn into_sexp(&self) -> Sexp;
 }
 
+impl Into<Sexp> for Vec<Sexp> {
+    fn into(self:Vec<Sexp>) -> Sexp {
+        Sexp::List(self)
+    }
+}
+
+impl Into<Sexp> for String {
+    fn into(self:String) -> Sexp {
+        Sexp::String(self)
+    }
+}
+
+impl<'a> From<&'a str> for Sexp {
+    fn from(t:&str) -> Sexp {
+        Sexp::String(t.into())
+    }
+}
+
+impl Into<Sexp> for i64 {
+    fn into(self:i64) -> Sexp {
+        Sexp::String(format!("{}", self))
+    }
+}
+
+impl Into<Sexp> for f64 {
+    fn into(self:f64) -> Sexp {
+        Sexp::String(format!("{}", self))
+    }
+}
+
 /// a symbolic-expression
 /// Can be a string or a list or nothing
 #[derive(Debug, Clone, PartialEq)]
@@ -67,13 +97,15 @@ impl Sexp {
     }
 
     /// create a String type symbolic-expression
+    #[deprecated(since="4.0.3", note="please use `.into()` instead")]
     pub fn new_string<T>(s: T) -> Sexp
         where T: fmt::Display
     {
-        Sexp::String(format!("{}", s))
+        format!("{}", s).into()
     }
 
     /// create a list type symbolic-expression
+    #[deprecated(since="4.0.3", note="please use `.into()` instead")]
     pub fn new_list(v: Vec<Sexp>) -> Sexp {
         Sexp::List(v)
     }
@@ -86,7 +118,7 @@ impl Sexp {
         where F: Fn(&mut Vec<Sexp>)
     {
         let mut v = vec![];
-        v.push(Sexp::new_string(name));
+        v.push(name.into());
         fill(&mut v);
         Sexp::List(v)
     }
@@ -94,13 +126,14 @@ impl Sexp {
     /// create a list type symbolic-expression where
     /// the first element of the list is a string that indicates
     /// the name
+    #[deprecated(since="4.0.3", note="please use `.into()` instead")]
     pub fn new_named<T>(name: &str, value: T) -> Sexp
         where T: fmt::Display
     {
         let mut v = vec![];
-        v.push(Sexp::new_string(name));
-        v.push(Sexp::new_string(value));
-        Sexp::List(v)
+        v.push(format!("{}", name).into());
+        v.push(format!("{}", value).into());
+        v.into()
     }
 
     /// create a list type symbolic-expression where
@@ -111,7 +144,7 @@ impl Sexp {
         where T: IntoSexp
     {
         let mut v = vec![];
-        v.push(Sexp::new_string(name));
+        v.push(name.into());
         v.push(value.into_sexp());
         Sexp::List(v)
     }
