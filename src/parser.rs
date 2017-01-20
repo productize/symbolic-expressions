@@ -3,7 +3,6 @@
 use Result;
 use Sexp;
 use parse_error;
-use str_error;
 use std::result;
 use std::io;
 use std::fs::File;
@@ -84,7 +83,7 @@ impl Parser {
 /// parse a &str to a symbolic-expression
 pub fn parse_str(sexp: &str) -> Result<Sexp> {
     if sexp.is_empty() {
-        return Ok(Sexp::new_empty());
+        return Ok(Sexp::default());
     }
     let mut parser = Parser::default();
     parser.data = sexp.chars().collect();
@@ -162,10 +161,6 @@ fn read_file(name: &str) -> result::Result<String, io::Error> {
 
 /// parse a file as a symbolic-expression
 pub fn parse_file(name: &str) -> Result<Sexp> {
-    let s = match read_file(name) {
-            Ok(s) => Ok(s),
-            Err(x) => str_error(format!("{:?}", x)),
-        }
-        ?;
+    let s = read_file(name)?;
     parse_str(&s[..])
 }

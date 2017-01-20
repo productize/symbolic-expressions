@@ -1,11 +1,10 @@
-// (c) 2016 Productize SPRL <joost@productize.be>
+// (c) 2016-2017 Productize SPRL <joost@productize.be>
 
 use std::fmt;
 use std::result;
 use std::str::FromStr;
 use std::mem;
 
-use str_error;
 use Result;
 
 /// like Into trait but works from a ref avoiding consumption or expensive clone
@@ -62,6 +61,7 @@ pub fn encode_string(s: &str) -> String {
 
 impl Sexp {
     /// create an empty symbolic-expression
+    #[deprecated(since="4.0.0", note="please use `Sexp::default()` instead")]
     pub fn new_empty() -> Sexp {
         Sexp::Empty
     }
@@ -122,7 +122,7 @@ impl Sexp {
         mem::swap(&mut e, self);
         match e {
             Sexp::List(v) => Ok(v),
-            _ => str_error(format!("Not a list: {}", e)),
+            _ => Err(format!("Not a list: {}", e).into()),
         }
     }
 
@@ -132,7 +132,7 @@ impl Sexp {
         mem::swap(&mut e, self);
         match e {
             Sexp::String(s) => Ok(s),
-            _ => str_error(format!("Not a string: {}", e)),
+            _ => Err(format!("Not a string: {}", e).into()),
         }
     }
 
@@ -145,7 +145,7 @@ impl Sexp {
     pub fn list(&self) -> Result<&Vec<Sexp>> {
         match *self {
             Sexp::List(ref v) => Ok(v),
-            _ => str_error(format!("not a list: {}", self)),
+            _ => Err(format!("not a list: {}", self).into()),
         }
     }
 
@@ -153,7 +153,7 @@ impl Sexp {
     pub fn string(&self) -> Result<&String> {
         match *self {
             Sexp::String(ref s) => Ok(s),
-            _ => str_error(format!("not a string: {}", self)),
+            _ => Err(format!("not a string: {}", self).into()),
         }
     }
 
@@ -177,20 +177,16 @@ impl Sexp {
     /// that is a f64
     pub fn f(&self) -> Result<f64> {
         let s = self.string()?;
-        match f64::from_str(s) {
-            Ok(f) => Ok(f),
-            _ => str_error(format!("Error parsing as float {}", self)),
-        }
+        let f = f64::from_str(s)?;
+        Ok(f)
     }
 
     /// access the symbolic-expression as if it is a String
     /// that is an i64
     pub fn i(&self) -> Result<i64> {
         let s = self.string()?;
-        match i64::from_str(s) {
-            Ok(f) => Ok(f),
-            _ => str_error(format!("Error parsing as int {}", self)),
-        }
+        let i = i64::from_str(s)?;
+        Ok(i)
     }
 
     /// access the symbolic-expression as if it is a List
@@ -210,7 +206,7 @@ impl Sexp {
         let v2 = &v[..];
         let st = v2[0].string()?;
         if st != s {
-            return str_error(format!("list {} doesn't start with {}, but with {}", self, s, st));
+            return Err(format!("list {} doesn't start with {}, but with {}", self, s, st).into());
         };
         Ok(&v[1..])
     }
@@ -221,7 +217,7 @@ impl Sexp {
     pub fn named_value(&self, s: &str) -> Result<&Sexp> {
         let v = self.list()?;
         if v.len() != 2 {
-            return str_error(format!("list {} is not a named_value", s));
+            return Err(format!("list {} is not a named_value", s).into());
         }
         let l = self.slice_atom(s)?;
         Ok(&l[0])
@@ -250,13 +246,13 @@ impl Sexp {
         let v2 = &v[..];
         let st = v2[0].string()?;
         if st != s {
-            return str_error(format!("list doesn't start with {}, but with {}", s, st));
+            return Err(format!("list doesn't start with {}, but with {}", s, st).into());
         };
         if v.len() != (num + 1) {
-            return str_error(format!("list ({}) doesn't have {} elements but {}",
+            return Err(format!("list ({}) doesn't have {} elements but {}",
                                      s,
                                      num,
-                                     v.len() - 1));
+                                     v.len() - 1).into());
         }
         Ok(&v[1..])
     }
@@ -280,5 +276,11 @@ impl fmt::Display for Sexp {
             }
             Sexp::Empty => Ok(()),
         }
+    }
+}
+
+impl Default for Sexp {
+    fn default() -> Sexp {
+        Sexp::Empty
     }
 }

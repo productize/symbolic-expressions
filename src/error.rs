@@ -1,22 +1,25 @@
-// (c) 2016 Productize SPRL <joost@productize.be>
+// (c) 2016-2017 Productize SPRL <joost@productize.be>
 
-use std::string::FromUtf8Error;
-use std::error;
+use std::string;
 use std::io;
-use std::fmt;
-use std::result;
+use std::num;
 
-/// Error type for symbolic-expressions
-#[derive(Debug)]
-pub enum Error {
-    /// any other error type
-    Other(String),
-    /// intended to give more detailed parser errrors, actually not used currently
-    Parse(ParseError, String),
-    /// IO error
-    Io(io::Error),
-    /// UTF8 parsing error
-    FromUtf8(FromUtf8Error),
+error_chain! {
+
+    errors {
+        /// parser error
+        Parse(t: ParseError, s: String) {
+            description("parse error")
+            display("parse error: '{}'", s)
+        }
+    }
+    
+    foreign_links {
+        Io(io::Error) #[doc = "Json error"];
+        FromUtf8(string::FromUtf8Error) #[doc = "Utf8 error"];
+        Float(num::ParseFloatError) #[doc = "Float error"];
+        Int(num::ParseIntError) #[doc = "Int error"];
+    }
 }
 
 /// detailed symbolic-expression parse error information
@@ -27,56 +30,6 @@ pub struct ParseError {
     col: usize,
 }
 
-impl error::Error for Error {
-    fn description(&self) -> &str {
-        match *self {
-            Error::Other(ref s) => s,
-            Error::Parse(_, ref pe) => pe,
-            Error::Io(ref error) => error::Error::description(error),
-            Error::FromUtf8(ref error) => error.description(),
-        }
-    }
-
-    fn cause(&self) -> Option<&error::Error> {
-        match *self {
-            Error::Io(ref error) => Some(error),
-            Error::FromUtf8(ref error) => Some(error),
-            _ => None,
-        }
-    }
-}
-
-impl From<io::Error> for Error {
-    fn from(error: io::Error) -> Error {
-        Error::Io(error)
-    }
-}
-
-impl From<FromUtf8Error> for Error {
-    fn from(error: FromUtf8Error) -> Error {
-        Error::FromUtf8(error)
-    }
-}
-
-impl fmt::Display for Error {
-    fn fmt(&self, fmt: &mut fmt::Formatter) -> result::Result<(), fmt::Error> {
-        match *self {
-            Error::Other(ref s) => write!(fmt, "Error:{}", s),
-            Error::Parse(ref pe, _) => write!(fmt, "Parse Error {}:{} {}", pe.line, pe.col, pe.msg),
-            Error::Io(ref error) => fmt::Display::fmt(error, fmt),
-            Error::FromUtf8(ref error) => fmt::Display::fmt(error, fmt),
-        }
-    }
-}
-
-/// symbolic-expressions Result type
-pub type Result<T> = result::Result<T, Error>;
-
-/// utility function that creates a symbolic-expressions Error Result from a String
-pub fn str_error<T>(s: String) -> Result<T> {
-    Err(Error::Other(s))
-}
-
 /// utility function that creates a symbolic-expressions Error Result for a parser error
 pub fn parse_error<T>(line: usize, col: usize, msg: String) -> Result<T> {
     let pe = ParseError {
@@ -85,5 +38,5 @@ pub fn parse_error<T>(line: usize, col: usize, msg: String) -> Result<T> {
         col: col,
     };
     let s = format!("Parse Error: {}:{} {}", line, col, pe.msg);
-    Err(Error::Parse(pe, s))
+    Err(ErrorKind::Parse(pe, s).into())
 }
