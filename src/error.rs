@@ -15,7 +15,7 @@ error_chain! {
     }
     
     foreign_links {
-        Io(io::Error) #[doc = "Json error"];
+        Io(io::Error) #[doc = "IO error"];
         FromUtf8(string::FromUtf8Error) #[doc = "Utf8 error"];
         Float(num::ParseFloatError) #[doc = "Float error"];
         Int(num::ParseIntError) #[doc = "Int error"];
