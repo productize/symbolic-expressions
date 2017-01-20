@@ -43,6 +43,16 @@ impl Into<Sexp> for f64 {
     }
 }
 
+impl<'a> From<(&'a str, &'a String)> for Sexp {
+    fn from(kv:(&str, &String)) -> Sexp {
+        let (name,value) = kv;
+        let mut v = vec![];
+        v.push(name.into());
+        v.push(value.as_str().into());
+        v.into()
+    }
+}
+
 /// a symbolic-expression
 /// Can be a string or a list or nothing
 #[derive(Debug, Clone, PartialEq)]
