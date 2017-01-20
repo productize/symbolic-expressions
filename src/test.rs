@@ -1,31 +1,27 @@
-// (c) 2016 Productize SPRL <joost@productize.be>
+// (c) 2016-2017 Productize SPRL <joost@productize.be>
 
 use ser;
 use formatter;
 use parser;
 
-#[allow(dead_code)]
 fn check_parse_res(s: &str, o: &str) {
     let e = parser::parse_str(s).unwrap();
     let t = ser::to_string(&e).unwrap();
     assert_eq!(o, t)
 }
 
-#[allow(dead_code)]
 fn check_parse(s: &str) {
     let e = parser::parse_str(s).unwrap();
     let t = ser::to_string(&e).unwrap();
     assert_eq!(s, t)
 }
 
-#[allow(dead_code)]
 fn check_parse_kicad(s: &str) {
     let e = parser::parse_str(s).unwrap();
     let t = ser::to_string_with_rules(&e, kicad_test_rules()).unwrap();
     assert_eq!(s, t)
 }
 
-#[allow(dead_code)]
 fn check_parse_rules(s: &str, rules: formatter::Rules) {
     let e = parser::parse_str(s).unwrap();
     let t = ser::to_string_with_rules(&e, rules).unwrap();
@@ -33,13 +29,11 @@ fn check_parse_rules(s: &str, rules: formatter::Rules) {
 }
 
 
-#[allow(dead_code)]
 fn parse_fail(s: &str) {
     parser::parse_str(s).unwrap();
 }
 
-#[allow(dead_code)]
-pub fn kicad_test_rules() -> formatter::Rules {
+fn kicad_test_rules() -> formatter::Rules {
     let mut rf = formatter::Rules::new();
     rf.insert("layer", 1);
     rf.insert("desc", 1);

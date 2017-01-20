@@ -1,4 +1,4 @@
-// (c) 2015-2016 Productize SPRL <joost@productize.be>
+// (c) 2015-2017 Productize SPRL <joost@productize.be>
 
 //! symbolic-expressions parsing and generating library
 
