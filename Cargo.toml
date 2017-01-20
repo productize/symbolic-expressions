@@ -9,4 +9,4 @@ keywords = ["sexp","s-exp","symbolic","kicad"]
 documentation = "https://docs.rs/symbolic_expressions"
 
 [dependencies]
-error-chain = "0.7"
+error-chain = "0.8"
