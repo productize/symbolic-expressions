@@ -86,6 +86,19 @@ pub struct IterAtom<'a> {
     iter:Iter<'a,Sexp>,
 }
 
+/// convert from a symbolic-expression to something
+pub trait FromSexp
+    where Self: Sized
+{
+    /// convert from a symbolic-expression to something
+    fn from_sexp(&Sexp) -> Result<Self>;
+}
+
+/// convert from a symbolic-expression to something (dispatcher)
+pub fn from_sexp<T: FromSexp>(s: &Sexp) -> Result<T> {
+    T::from_sexp(s)
+}
+
 // Following the KiCad file formats specification chapter 4.4 - Identifiers and Strings:
 // A string may not contain an actual newline or carriage return,
 // but it may use an escape sequence to encode a // newline, such as \n.
@@ -418,6 +431,11 @@ impl<'a> IterAtom<'a> {
     pub fn s(&mut self, sname:&str, name:&str) -> Result<String> {
         self.expect(sname, name, |x| x.string().map(|y| y.clone()))
     }
+    
+    /// expect a `Sexp` while iterating a `Sexp` list
+    pub fn t<T:FromSexp>(&mut self, sname:&str, name:&str) -> Result<T> {
+        self.expect(sname, name, |x| T::from_sexp(x))
+    }
 
     /// optional integer while iterating a `Sexp` list
     pub fn opt_i(&mut self, or:i64) -> Result<i64> {
@@ -434,3 +452,5 @@ impl<'a> IterAtom<'a> {
         self.optional(or, |x| x.string().map(|y| y.clone()))
     }
 }
+
+
