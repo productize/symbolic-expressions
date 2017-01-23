@@ -14,44 +14,44 @@ pub trait IntoSexp {
 }
 
 impl Into<Sexp> for Vec<Sexp> {
-    fn into(self:Vec<Sexp>) -> Sexp {
+    fn into(self: Vec<Sexp>) -> Sexp {
         Sexp::List(self)
     }
 }
 
 impl Into<Sexp> for String {
-    fn into(self:String) -> Sexp {
+    fn into(self: String) -> Sexp {
         Sexp::String(self)
     }
 }
 
 impl<'a> From<&'a str> for Sexp {
-    fn from(t:&str) -> Sexp {
+    fn from(t: &str) -> Sexp {
         Sexp::String(t.into())
     }
 }
 
 impl<'a> From<&'a String> for Sexp {
-    fn from(t:&String) -> Sexp {
+    fn from(t: &String) -> Sexp {
         Sexp::String(t.clone())
     }
 }
 
 impl Into<Sexp> for i64 {
-    fn into(self:i64) -> Sexp {
+    fn into(self: i64) -> Sexp {
         Sexp::String(format!("{}", self))
     }
 }
 
 impl Into<Sexp> for f64 {
-    fn into(self:f64) -> Sexp {
+    fn into(self: f64) -> Sexp {
         Sexp::String(format!("{}", self))
     }
 }
 
 impl<'a> From<(&'a str, Sexp)> for Sexp {
-    fn from(kv:(&str, Sexp)) -> Sexp {
-        let (name,value) = kv;
+    fn from(kv: (&str, Sexp)) -> Sexp {
+        let (name, value) = kv;
         let mut v = vec![];
         v.push(name.into());
         v.push(value);
@@ -59,9 +59,9 @@ impl<'a> From<(&'a str, Sexp)> for Sexp {
     }
 }
 
-impl<'a, T:fmt::Display> From<(&'a str, &'a T)> for Sexp {
-    fn from(kv:(&str, &T)) -> Sexp {
-        let (name,value) = kv;
+impl<'a, T: fmt::Display> From<(&'a str, &'a T)> for Sexp {
+    fn from(kv: (&str, &T)) -> Sexp {
+        let (name, value) = kv;
         let mut v = vec![];
         v.push(name.into());
         v.push(format!("{}", value).into());
@@ -137,21 +137,17 @@ impl Sexp {
     }
 
     /// create an empty list type symbolic-expression
-    pub fn start(name:&str) -> Sexp {
+    pub fn start(name: &str) -> Sexp {
         let mut v = vec![];
         v.push(Sexp::String(name.into()));
         Sexp::List(v)
     }
 
     /// push an element in a list
-    pub fn push<T:Into<Sexp>>(&mut self, element:T) {
+    pub fn push<T: Into<Sexp>>(&mut self, element: T) {
         match *self {
-            Sexp::List(ref mut v) => {
-                v.push(element.into())
-            }
-            _ => {
-                panic!("Only use push on lists!")
-            }
+            Sexp::List(ref mut v) => v.push(element.into()),
+            _ => panic!("Only use push on lists!"),
         }
     }
 
@@ -329,9 +325,10 @@ impl Sexp {
         };
         if v.len() != (num + 1) {
             return Err(format!("list ({}) doesn't have {} elements but {}",
-                                     s,
-                                     num,
-                                     v.len() - 1).into());
+                               s,
+                               num,
+                               v.len() - 1)
+                .into());
         }
         Ok(&v[1..])
     }
