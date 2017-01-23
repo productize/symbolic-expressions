@@ -43,6 +43,7 @@ impl Into<Sexp> for f64 {
     }
 }
 
+/*
 impl<'a> From<(&'a str, &'a String)> for Sexp {
     fn from(kv:(&str, &String)) -> Sexp {
         let (name,value) = kv;
@@ -52,6 +53,27 @@ impl<'a> From<(&'a str, &'a String)> for Sexp {
         v.into()
     }
 }
+
+impl<'a> From<(&'a str, &'a f64)> for Sexp {
+    fn from(kv:(&str, &f64)) -> Sexp {
+        let (name,value) = kv;
+        let mut v = vec![];
+        v.push(name.into());
+        v.push(format!("{}", value).into());
+        v.into()
+    }
+}*/
+
+impl<'a, T:fmt::Display> From<(&'a str, &'a T)> for Sexp {
+    fn from(kv:(&str, &T)) -> Sexp {
+        let (name,value) = kv;
+        let mut v = vec![];
+        v.push(name.into());
+        v.push(format!("{}", value).into());
+        v.into()
+    }
+}
+
 
 /// a symbolic-expression
 /// Can be a string or a list or nothing
