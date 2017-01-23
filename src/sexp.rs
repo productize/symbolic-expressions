@@ -4,6 +4,7 @@ use std::fmt;
 use std::result;
 use std::str::FromStr;
 use std::mem;
+use std::slice::Iter;
 
 use Result;
 /// like Into trait but works from a ref avoiding consumption or expensive clone
@@ -263,16 +264,6 @@ impl Sexp {
         Ok(i)
     }
 
-    /// get a field
-    pub fn get<T, E>(&self) -> result::Result<T, E>
-        where T: FromStr,
-              E: From<::Error> + From<<T as FromStr>::Err>
-    {
-        let s = self.string()?;
-        let x: T = s.parse()?;
-        Ok(x)
-    }
-
     /// access the symbolic-expression as if it is a List
     /// assuming the first element is a String and return that
     pub fn list_name(&self) -> Result<&String> {
@@ -293,6 +284,22 @@ impl Sexp {
             return Err(format!("list {} doesn't start with {}, but with {}", self, s, st).into());
         };
         Ok(&v[1..])
+    }
+
+    /// access the symbolic-expression as if it is a named List
+    /// iterator experiment
+    pub fn iter_atom(&self, s:&str) -> Result<Iter<Self> > {
+        let v = self.list()?;
+        let mut i = v.iter();
+        let st = match i.next() {
+            None => return Err(format!("missing first element {} in list {}", s, self).into()),
+            Some(e) => e.string()?,
+            
+        };
+        if st != s {
+            return Err(format!("list {} doesn't start with {}, but with {}", self, s, st).into());
+        };
+        Ok(i)
     }
 
     /// access the symbolic-expression as if it is a named List
