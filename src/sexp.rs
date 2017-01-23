@@ -407,6 +407,11 @@ pub fn expect_f(sname:&str, name:&str, i:&mut Iter<Sexp>) -> Result<f64> {
     expect(sname, name, i, |x| x.f())
 }
 
+/// expect a String while iterating a `Sexp` list
+pub fn expect_s(sname:&str, name:&str, i:&mut Iter<Sexp>) -> Result<String> {
+    expect(sname, name, i, |x| x.string().map(|y| y.clone()))
+}
+
 /// optional integer while iterating a `Sexp` list
 pub fn optional_i(i:&mut Iter<Sexp>, or:i64) -> Result<i64> {
     optional(i, or, |x| x.i())
