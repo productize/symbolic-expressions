@@ -376,3 +376,44 @@ impl Default for Sexp {
         Sexp::Empty
     }
 }
+
+fn expect<T,F>(sname:&str, name:&str, i:&mut Iter<Sexp>, get:F) -> Result<T>
+    where F:Fn(&Sexp) -> Result<T>
+{
+    let x = match i.next() {
+        Some(x) => get(x)?,
+        None => return Err(format!("missing {} field in {}",name, sname).into()),
+    };
+    Ok(x)
+}
+
+fn optional<T,F>(i:&mut Iter<Sexp>, or:T, get:F) -> Result<T>
+    where F:Fn(&Sexp) -> Result<T>
+{
+    let x = match i.next() {
+        Some(x) => get(x)?,
+        None => or,
+    };
+    Ok(x)
+}
+
+/// expect an integer while iterating a `Sexp` list
+pub fn expect_i(sname:&str, name:&str, i:&mut Iter<Sexp>) -> Result<i64> {
+    expect(sname, name, i, |x| x.i())
+}
+
+/// expect a float while iterating a `Sexp` list
+pub fn expect_f(sname:&str, name:&str, i:&mut Iter<Sexp>) -> Result<f64> {
+    expect(sname, name, i, |x| x.f())
+}
+
+/// optional integer while iterating a `Sexp` list
+pub fn optional_i(i:&mut Iter<Sexp>, or:i64) -> Result<i64> {
+    optional(i, or, |x| x.i())
+
+}
+
+/// optional float while iterating a `Sexp` list
+pub fn optional_f(i:&mut Iter<Sexp>, or:f64) -> Result<f64> {
+    optional(i, or, |x| x.f())
+}
