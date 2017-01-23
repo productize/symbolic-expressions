@@ -451,6 +451,15 @@ impl<'a> IterAtom<'a> {
     pub fn opt_s(&mut self, or:String) -> Result<String> {
         self.optional(or, |x| x.string().map(|y| y.clone()))
     }
+    
+    /// optional `Sexp` while iterating a `Sexp` list
+    pub fn opt_t<T:FromSexp>(&mut self) -> Result<Option<T>> {
+        let x = match self.iter.next() {
+            Some(x) => Some(T::from_sexp(x)?),
+            None => None,
+        };
+        Ok(x)
+    }
 }
 
 
