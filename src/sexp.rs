@@ -69,24 +69,11 @@ impl<'a, T: fmt::Display> From<(&'a str, &'a T)> for Sexp {
     }
 }
 
-impl<'a> From<&'a Sexp> for Result<i64> {
-    fn from(s:&Sexp) -> Result<i64> {
-        s.i()
+impl<'a> From<&'a Sexp> for Result<f64> {
+    fn from(s:&Sexp) -> Result<f64> {
+        s.f()
     }
 }
-
-impl Into<Result<f64> > for Sexp {
-    fn into(self:Sexp) -> Result<f64> {
-        self.f()
-    }
-}
-
-impl Into<Result<String> > for Sexp {
-    fn into(self:Sexp) -> Result<String> {
-        Ok(self.string()?.clone())
-    }
-}
-
 
 /// a symbolic-expression
 /// Can be a string or a list or nothing
