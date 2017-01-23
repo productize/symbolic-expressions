@@ -69,7 +69,6 @@ impl<'a, T:fmt::Display> From<(&'a str, &'a T)> for Sexp {
     }
 }
 
-
 /// a symbolic-expression
 /// Can be a string or a list or nothing
 #[derive(Debug, Clone, PartialEq)]
@@ -177,7 +176,7 @@ impl Sexp {
         where T: fmt::Display
     {
         let mut v = vec![];
-        v.push(format!("{}", name).into());
+        v.push(name.into());
         v.push(format!("{}", value).into());
         v.into()
     }

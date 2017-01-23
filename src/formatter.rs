@@ -39,7 +39,7 @@ impl Formatter for CompactFormatter {
     }
 }
 
-/// datatype used by the example Formatter RulesFormatter
+/// datatype used by the example Formatter `RulesFormatter`
 pub type Rules = HashMap<&'static str, i64>;
 
 pub struct RulesFormatter {
@@ -71,8 +71,8 @@ impl Formatter for RulesFormatter {
         where W: io::Write
     {
         // if first element is string and it has an indent setting
-        if let Some(ref sexp) = value {
-            if let Sexp::String(ref s) = **sexp {
+        if let Some(sexp) = value {
+            if let Sexp::String(ref s) = *sexp {
                 let s: &str = s;
                 if let Some(&i) = self.indent_before.get(s) {
                     writer.write_all(b"\n")?;
