@@ -31,6 +31,12 @@ impl<'a> From<&'a str> for Sexp {
     }
 }
 
+impl<'a> From<&'a String> for Sexp {
+    fn from(t:&String) -> Sexp {
+        Sexp::String(t.clone())
+    }
+}
+
 impl Into<Sexp> for i64 {
     fn into(self:i64) -> Sexp {
         Sexp::String(format!("{}", self))
@@ -52,7 +58,6 @@ impl<'a> From<(&'a str, Sexp)> for Sexp {
         v.into()
     }
 }
-
 
 impl<'a, T:fmt::Display> From<(&'a str, &'a T)> for Sexp {
     fn from(kv:(&str, &T)) -> Sexp {
