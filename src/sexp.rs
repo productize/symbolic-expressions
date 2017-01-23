@@ -83,7 +83,7 @@ pub enum Sexp {
 
 /// Atom iterator wrapper
 pub struct IterAtom<'a> {
-    i:Iter<'a,Sexp>,
+    iter:Iter<'a,Sexp>,
 }
 
 // Following the KiCad file formats specification chapter 4.4 - Identifiers and Strings:
@@ -304,7 +304,7 @@ impl Sexp {
         if st != s {
             return Err(format!("list {} doesn't start with {}, but with {}", self, s, st).into());
         };
-        Ok(IterAtom { i:i })
+        Ok(IterAtom { iter:i })
     }
 
     /// access the symbolic-expression as if it is a named List
@@ -387,7 +387,7 @@ impl<'a> IterAtom<'a> {
     fn expect<T,F>(&mut self, sname:&str, name:&str, get:F) -> Result<T>
         where F:Fn(&Sexp) -> Result<T>
     {
-        let x = match self.i.next() {
+        let x = match self.iter.next() {
             Some(x) => get(x)?,
             None => return Err(format!("missing {} field in {}",name, sname).into()),
         };
@@ -397,7 +397,7 @@ impl<'a> IterAtom<'a> {
     fn optional<T,F>(&mut self, or:T, get:F) -> Result<T>
         where F:Fn(&Sexp) -> Result<T>
     {
-        let x = match self.i.next() {
+        let x = match self.iter.next() {
             Some(x) => get(x)?,
             None => or,
         };
@@ -405,32 +405,32 @@ impl<'a> IterAtom<'a> {
     }
     
     /// expect an integer while iterating a `Sexp` list
-    pub fn expect_i(&mut self, sname:&str, name:&str) -> Result<i64> {
+    pub fn i(&mut self, sname:&str, name:&str) -> Result<i64> {
         self.expect(sname, name, |x| x.i())
     }
 
     /// expect a float while iterating a `Sexp` list
-    pub fn expect_f(&mut self, sname:&str, name:&str) -> Result<f64> {
+    pub fn f(&mut self, sname:&str, name:&str) -> Result<f64> {
         self.expect(sname, name, |x| x.f())
     }
 
     /// expect a String while iterating a `Sexp` list
-    pub fn expect_s(&mut self, sname:&str, name:&str) -> Result<String> {
+    pub fn s(&mut self, sname:&str, name:&str) -> Result<String> {
         self.expect(sname, name, |x| x.string().map(|y| y.clone()))
     }
 
     /// optional integer while iterating a `Sexp` list
-    pub fn optional_i(&mut self, or:i64) -> Result<i64> {
+    pub fn opt_i(&mut self, or:i64) -> Result<i64> {
         self.optional(or, |x| x.i())
     }
 
     /// optional float while iterating a `Sexp` list
-    pub fn optional_f(&mut self, or:f64) -> Result<f64> {
+    pub fn opt_f(&mut self, or:f64) -> Result<f64> {
         self.optional(or, |x| x.f())
     }
     
     /// optional String while iterating a `Sexp` list
-    pub fn optional_s(&mut self, or:String) -> Result<String> {
+    pub fn opt_s(&mut self, or:String) -> Result<String> {
         self.optional(or, |x| x.string().map(|y| y.clone()))
     }
 }
