@@ -69,9 +69,9 @@ impl<'a, T: fmt::Display> From<(&'a str, &'a T)> for Sexp {
     }
 }
 
-impl Into<Result<i64> > for Sexp {
-    fn into(self:Sexp) -> Result<i64> {
-        self.i()
+impl<'a> From<&'a Sexp> for Result<i64> {
+    fn from(s:&Sexp) -> Result<i64> {
+        s.i()
     }
 }
 
