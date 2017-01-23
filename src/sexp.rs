@@ -43,6 +43,17 @@ impl Into<Sexp> for f64 {
     }
 }
 
+impl<'a> From<(&'a str, Sexp)> for Sexp {
+    fn from(kv:(&str, Sexp)) -> Sexp {
+        let (name,value) = kv;
+        let mut v = vec![];
+        v.push(name.into());
+        v.push(value);
+        v.into()
+    }
+}
+
+
 impl<'a, T:fmt::Display> From<(&'a str, &'a T)> for Sexp {
     fn from(kv:(&str, &T)) -> Sexp {
         let (name,value) = kv;
