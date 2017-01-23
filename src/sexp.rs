@@ -43,27 +43,6 @@ impl Into<Sexp> for f64 {
     }
 }
 
-/*
-impl<'a> From<(&'a str, &'a String)> for Sexp {
-    fn from(kv:(&str, &String)) -> Sexp {
-        let (name,value) = kv;
-        let mut v = vec![];
-        v.push(name.into());
-        v.push(value.as_str().into());
-        v.into()
-    }
-}
-
-impl<'a> From<(&'a str, &'a f64)> for Sexp {
-    fn from(kv:(&str, &f64)) -> Sexp {
-        let (name,value) = kv;
-        let mut v = vec![];
-        v.push(name.into());
-        v.push(format!("{}", value).into());
-        v.into()
-    }
-}*/
-
 impl<'a, T:fmt::Display> From<(&'a str, &'a T)> for Sexp {
     fn from(kv:(&str, &T)) -> Sexp {
         let (name,value) = kv;
@@ -140,6 +119,25 @@ impl Sexp {
     #[deprecated(since="4.0.3", note="please use `.into()` instead")]
     pub fn new_list(v: Vec<Sexp>) -> Sexp {
         Sexp::List(v)
+    }
+
+    /// create an empty list type symbolic-expression
+    pub fn start(name:&str) -> Sexp {
+        let mut v = vec![];
+        v.push(Sexp::String(name.into()));
+        Sexp::List(v)
+    }
+
+    /// push an element in a list
+    pub fn push<T:Into<Sexp>>(&mut self, element:T) {
+        match *self {
+            Sexp::List(ref mut v) => {
+                v.push(element.into())
+            }
+            _ => {
+                panic!("Only use push on lists!")
+            }
+        }
     }
 
     /// create a list type symbolic-expression where
