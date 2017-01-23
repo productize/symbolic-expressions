@@ -69,9 +69,12 @@ impl<'a, T: fmt::Display> From<(&'a str, &'a T)> for Sexp {
     }
 }
 
-impl<'a> From<&'a Sexp> for Result<f64> {
-    fn from(s:&Sexp) -> Result<f64> {
-        s.f()
+impl<'a> From<&'a Sexp> for Option<f64> {
+    fn from(s:&Sexp) -> Option<f64> {
+        match s.f() {
+            Ok(f) => Some(f),
+            _ => None,
+        }
     }
 }
 
