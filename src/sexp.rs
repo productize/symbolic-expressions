@@ -186,7 +186,7 @@ impl Sexp {
     /// the first element of the list is a string that indicates
     /// the name, and the second is another symbolic-expression
     /// created via the IntoSexp trait
-    #[deprecated(since="4.0.3", note="please use `.into()` on a tuple instead")]
+    #[deprecated(since="4.0.5", note="please use `.into()` on a tuple instead")]
     pub fn new_named_sexp<T>(name: &str, value: &T) -> Sexp
         where T: IntoSexp
     {
