@@ -6,7 +6,6 @@ use std::str::FromStr;
 use std::mem;
 
 use Result;
-
 /// like Into trait but works from a ref avoiding consumption or expensive clone
 pub trait IntoSexp {
     /// convert self into a Sexp
@@ -66,12 +65,6 @@ impl<'a, T: fmt::Display> From<(&'a str, &'a T)> for Sexp {
         v.push(name.into());
         v.push(format!("{}", value).into());
         v.into()
-    }
-}
-
-impl<'a> From<&'a Sexp> for Result<f64> {
-    fn from(s:&Sexp) -> Result<f64> {
-        s.f()
     }
 }
 
@@ -268,6 +261,16 @@ impl Sexp {
         let s = self.string()?;
         let i = i64::from_str(s)?;
         Ok(i)
+    }
+
+    /// get a field
+    pub fn get<T, E>(&self) -> result::Result<T, E>
+        where T: FromStr,
+              E: From<::Error> + From<<T as FromStr>::Err>
+    {
+        let s = self.string()?;
+        let x: T = s.parse()?;
+        Ok(x)
     }
 
     /// access the symbolic-expression as if it is a List
