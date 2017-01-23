@@ -81,6 +81,11 @@ pub enum Sexp {
     Empty,
 }
 
+/// Atom iterator wrapper
+pub struct IterAtom<'a> {
+    i:Iter<'a,Sexp>,
+}
+
 // Following the KiCad file formats specification chapter 4.4 - Identifiers and Strings:
 // A string may not contain an actual newline or carriage return,
 // but it may use an escape sequence to encode a // newline, such as \n.
@@ -288,7 +293,7 @@ impl Sexp {
 
     /// access the symbolic-expression as if it is a named List
     /// iterator experiment
-    pub fn iter_atom(&self, s:&str) -> Result<Iter<Self> > {
+    pub fn iter_atom(&self, s:&str) -> Result<IterAtom> {
         let v = self.list()?;
         let mut i = v.iter();
         let st = match i.next() {
@@ -299,7 +304,7 @@ impl Sexp {
         if st != s {
             return Err(format!("list {} doesn't start with {}, but with {}", self, s, st).into());
         };
-        Ok(i)
+        Ok(IterAtom { i:i })
     }
 
     /// access the symbolic-expression as if it is a named List
@@ -377,48 +382,55 @@ impl Default for Sexp {
     }
 }
 
-fn expect<T,F>(sname:&str, name:&str, i:&mut Iter<Sexp>, get:F) -> Result<T>
-    where F:Fn(&Sexp) -> Result<T>
-{
-    let x = match i.next() {
-        Some(x) => get(x)?,
-        None => return Err(format!("missing {} field in {}",name, sname).into()),
-    };
-    Ok(x)
-}
+impl<'a> IterAtom<'a> {
 
-fn optional<T,F>(i:&mut Iter<Sexp>, or:T, get:F) -> Result<T>
-    where F:Fn(&Sexp) -> Result<T>
-{
-    let x = match i.next() {
-        Some(x) => get(x)?,
-        None => or,
-    };
-    Ok(x)
-}
+    fn expect<T,F>(&mut self, sname:&str, name:&str, get:F) -> Result<T>
+        where F:Fn(&Sexp) -> Result<T>
+    {
+        let x = match self.i.next() {
+            Some(x) => get(x)?,
+            None => return Err(format!("missing {} field in {}",name, sname).into()),
+        };
+        Ok(x)
+    }
 
-/// expect an integer while iterating a `Sexp` list
-pub fn expect_i(sname:&str, name:&str, i:&mut Iter<Sexp>) -> Result<i64> {
-    expect(sname, name, i, |x| x.i())
-}
+    fn optional<T,F>(&mut self, or:T, get:F) -> Result<T>
+        where F:Fn(&Sexp) -> Result<T>
+    {
+        let x = match self.i.next() {
+            Some(x) => get(x)?,
+            None => or,
+        };
+        Ok(x)
+    }
+    
+    /// expect an integer while iterating a `Sexp` list
+    pub fn expect_i(&mut self, sname:&str, name:&str) -> Result<i64> {
+        self.expect(sname, name, |x| x.i())
+    }
 
-/// expect a float while iterating a `Sexp` list
-pub fn expect_f(sname:&str, name:&str, i:&mut Iter<Sexp>) -> Result<f64> {
-    expect(sname, name, i, |x| x.f())
-}
+    /// expect a float while iterating a `Sexp` list
+    pub fn expect_f(&mut self, sname:&str, name:&str) -> Result<f64> {
+        self.expect(sname, name, |x| x.f())
+    }
 
-/// expect a String while iterating a `Sexp` list
-pub fn expect_s(sname:&str, name:&str, i:&mut Iter<Sexp>) -> Result<String> {
-    expect(sname, name, i, |x| x.string().map(|y| y.clone()))
-}
+    /// expect a String while iterating a `Sexp` list
+    pub fn expect_s(&mut self, sname:&str, name:&str) -> Result<String> {
+        self.expect(sname, name, |x| x.string().map(|y| y.clone()))
+    }
 
-/// optional integer while iterating a `Sexp` list
-pub fn optional_i(i:&mut Iter<Sexp>, or:i64) -> Result<i64> {
-    optional(i, or, |x| x.i())
+    /// optional integer while iterating a `Sexp` list
+    pub fn optional_i(&mut self, or:i64) -> Result<i64> {
+        self.optional(or, |x| x.i())
+    }
 
-}
-
-/// optional float while iterating a `Sexp` list
-pub fn optional_f(i:&mut Iter<Sexp>, or:f64) -> Result<f64> {
-    optional(i, or, |x| x.f())
+    /// optional float while iterating a `Sexp` list
+    pub fn optional_f(&mut self, or:f64) -> Result<f64> {
+        self.optional(or, |x| x.f())
+    }
+    
+    /// optional String while iterating a `Sexp` list
+    pub fn optional_s(&mut self, or:String) -> Result<String> {
+        self.optional(or, |x| x.string().map(|y| y.clone()))
+    }
 }
