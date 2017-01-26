@@ -7,6 +7,10 @@ description = "A symbolic-expression parser/writer"
 repository = "https://github.com/productize/symbolic-expressions"
 keywords = ["sexp","s-exp","symbolic","kicad"]
 documentation = "https://docs.rs/symbolic_expressions"
+categories = ["text-processing", "parsing", "encoding"]
+
+[badges]
+travis-ci = { repository = "productize/symbolic-expressions" }
 
 [dependencies]
 error-chain = "0.8"
