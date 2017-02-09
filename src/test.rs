@@ -202,3 +202,8 @@ fn test_fail_pcb() {
   \
                        (general))")
 }
+
+#[test]
+fn test_quoted_escape() {
+    check_parse_kicad("(hello \"21\\\" (inch test)\")")
+}

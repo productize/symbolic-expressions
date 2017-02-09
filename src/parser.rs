@@ -127,10 +127,19 @@ fn parse_quoted_string(parser: &mut Parser) -> Result<Sexp> {
     let mut s = String::new();
     parser.eat_char('"')?;
     // note that escaped quotes are actually not allowed
+    let mut escape = false;
     while !parser.eof() {
         let c = parser.peek()?;
-        if c == '"' {
-            break;
+        if c == '\\' {
+            escape = true;
+        } else if c == '"' {
+            if !escape {
+                break;
+            } else {
+                escape = false;
+            }
+        } else {
+            escape = false;
         }
         s.push(c);
         parser.inc()
