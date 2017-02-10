@@ -176,4 +176,12 @@ impl<'a> IterAtom<'a> {
     pub fn maybe_f_in_list(&mut self, name:&str) -> Option<f64> {
         self.maybe(|x| x.named_value_f(name))
     }
+
+    /// make sure we consumed all of the iterator
+    pub fn close<T>(&mut self, x:T) -> SResult<T> {
+        match self.iter.next() {
+            Some(x) => Err(format!("Unexpected {} in {}", x, self.name).into()),
+            None => Ok(x)
+        }
+    }
 }
