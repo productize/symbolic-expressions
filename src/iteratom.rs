@@ -22,7 +22,8 @@ pub fn from_sexp<T: FromSexp>(s: &Sexp) -> SResult<T> {
 /// Atom iterator wrapper
 pub struct IterAtom<'a> {
     name: String,
-    iter: Peekable<Iter<'a, Sexp>>,
+    /// containing iterable (pub for now)
+    pub iter: Peekable<Iter<'a, Sexp>>,
 }
 
 
