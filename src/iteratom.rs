@@ -45,6 +45,14 @@ impl<'a> IterAtom<'a> {
             iter: i,
         })
     }
+    
+    /// deconstruct a `Sexp` that is a list and doesn't start with a name
+    pub fn new_nameless(s: &'a Sexp, name:&str) -> SResult<IterAtom<'a>> {
+        Ok(IterAtom {
+            name: name.into(),
+            iter: s.list()?.iter().peekable(),
+        })
+    }
 
     fn expect<T, F>(&mut self, name: &str, get: F) -> SResult<T>
         where F: Fn(&Sexp) -> SResult<T>
