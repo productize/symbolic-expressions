@@ -92,6 +92,11 @@ impl<'a> IterAtom<'a> {
         self.expect(name, |x| T::from_sexp(x))
     }
 
+        /// expect a list containing a `Sexp` while iterating a `Sexp` list
+    pub fn t_in_list<T: FromSexp>(&mut self, name: &str) -> SResult<T> {
+        self.expect(name, |x| T::from_sexp(x.named_value(name)?))
+    }
+
     /// expect remainder of iterator to be a `Vec<T>`
     pub fn vec<T: FromSexp>(&mut self) -> SResult<Vec<T>> {
         let mut res = Vec::new();
