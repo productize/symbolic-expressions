@@ -4,7 +4,6 @@ use std::fmt;
 use std::result;
 use std::str::FromStr;
 use std::mem;
-use std::slice::Iter;
 
 use Result;
 /// like Into trait but works from a ref avoiding consumption or expensive clone
@@ -224,10 +223,18 @@ impl Sexp {
         }
     }
 
-    /// access the symbolic-expression as if it is a String
+    /// access the symbolic-expression as if it is an `&String`
     pub fn string(&self) -> Result<&String> {
         match *self {
             Sexp::String(ref s) => Ok(s),
+            _ => Err(format!("not a string: {}", self).into()),
+        }
+    }
+
+    /// access the symbolic-expression as if it is a `String`
+    pub fn s(&self) -> Result<String> {
+        match *self {
+            Sexp::String(ref s) => Ok(s.clone()),
             _ => Err(format!("not a string: {}", self).into()),
         }
     }
@@ -287,22 +294,6 @@ impl Sexp {
     }
 
     /// access the symbolic-expression as if it is a named List
-    /// iterator experiment
-    pub fn iter_atom(&self, s:&str) -> Result<Iter<Sexp>> {
-        let v = self.list()?;
-        let mut i = v.iter();
-        let st = match i.next() {
-            None => return Err(format!("missing first element {} in list {}", s, self).into()),
-            Some(e) => e.string()?,
-            
-        };
-        if st != s {
-            return Err(format!("list {} doesn't start with {}, but with {}", self, s, st).into());
-        };
-        Ok(i)
-    }
-
-    /// access the symbolic-expression as if it is a named List
     /// with two elements where the name is provided and returns
     /// the next element in the list
     pub fn named_value(&self, s: &str) -> Result<&Sexp> {
@@ -324,9 +315,14 @@ impl Sexp {
         self.named_value(s)?.f()
     }
 
-    /// as named_value but converted to String
+    /// as named_value but converted to `&String`
     pub fn named_value_string(&self, s: &str) -> Result<&String> {
         self.named_value(s)?.string()
+    }
+
+    /// as named_value but converted to `String`
+    pub fn named_value_s(&self, s: &str) -> Result<String> {
+        Ok(self.named_value(s)?.string()?.clone())
     }
 
     /// get the symbolic-expression as a list which starts
@@ -376,4 +372,3 @@ impl Default for Sexp {
         Sexp::Empty
     }
 }
-

@@ -20,6 +20,9 @@ pub mod parser;
 /// symbolic-expression serialization code: symbolic-expression -> data
 pub mod ser;
 
+/// high-level API for deconstructing symbolic-expressions
+pub mod iteratom;
+
 pub use formatter::Rules;
 pub use formatter::Formatter;
 
