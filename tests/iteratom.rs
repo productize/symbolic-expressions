@@ -17,6 +17,18 @@ mod error {
 
 use error::*;
 use symbolic_expressions::iteratom::*;
+use symbolic_expressions::Sexp;
+use symbolic_expressions::Result as SResult;
+
+struct Qq(i64);
+
+impl FromSexp for Qq {
+    fn from_sexp(s:&Sexp) -> SResult<Self> {
+        let i = s.named_value_i("d")?;
+        Ok(Qq(i))
+    }
+}
+
 
 fn test_int() -> Result<()> {
     let s = "(a (b c) (d 42))";
@@ -24,8 +36,8 @@ fn test_int() -> Result<()> {
     let mut i = IterAtom::new(&s, "a")?;
     let c = i.s_in_list("b")?;
     assert_eq!(&c, "c");
-    let e = i.maybe_i_in_list("d").unwrap();
-    assert_eq!(e, 42);
+    let e:Qq = i.t("d")?;
+    assert_eq!(e.0, 42);
     Ok(())
 }
 
