@@ -151,6 +151,18 @@ impl<'a> IterAtom<'a> {
     pub fn maybe_s(&mut self) -> Option<String> {
         self.maybe(|x| x.s())
     }
+
+    /// maybe a `String` while iterating a `Sexp` list
+    pub fn maybe_literal_s(&mut self, l:&str) -> Option<String> {
+        self.maybe(|x| {
+            let z = x.s()?;
+            if &z == l {
+                Ok(z)
+            } else {
+                Err("unexpected".into())
+            }
+        })
+    }
     
     /// maybe an `i64` while iterating a `Sexp` list
     pub fn maybe_i(&mut self) -> Option<i64> {
