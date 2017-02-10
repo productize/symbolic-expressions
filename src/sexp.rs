@@ -283,7 +283,18 @@ impl Sexp {
     /// access the symbolic-expression as if it is a named List
     /// where the name is provided and returns the remaining elements
     /// after the name as a slice
+    #[deprecated(since="4.1.4", note="please use `iteratom::IterAtom::new` instead")]
     pub fn slice_atom(&self, s: &str) -> Result<&[Sexp]> {
+        let v = self.list()?;
+        let v2 = &v[..];
+        let st = v2[0].string()?;
+        if st != s {
+            return Err(format!("list {} doesn't start with {}, but with {}", self, s, st).into());
+        };
+        Ok(&v[1..])
+    }
+
+    fn slice_atom_int(&self, s: &str) -> Result<&[Sexp]> {
         let v = self.list()?;
         let v2 = &v[..];
         let st = v2[0].string()?;
@@ -301,7 +312,7 @@ impl Sexp {
         if v.len() != 2 {
             return Err(format!("list {} is not a named_value", s).into());
         }
-        let l = self.slice_atom(s)?;
+        let l = self.slice_atom_int(s)?;
         Ok(&l[0])
     }
 
@@ -328,6 +339,7 @@ impl Sexp {
     /// get the symbolic-expression as a list which starts
     /// with a string that indicates the name and has num more
     /// elements, returns those elements
+    #[deprecated(since="4.1.4", note="please use `iteratom::IterAtom::new` instead")]
     pub fn slice_atom_num(&self, s: &str, num: usize) -> Result<&[Sexp]> {
         let v = self.list()?;
         let v2 = &v[..];
