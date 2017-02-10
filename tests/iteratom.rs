@@ -18,7 +18,6 @@ mod error {
 use error::*;
 use symbolic_expressions::iteratom::*;
 use symbolic_expressions::Sexp;
-use symbolic_expressions::Result as SResult;
 
 struct Qq(i64);
 
