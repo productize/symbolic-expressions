@@ -26,5 +26,7 @@ pub mod iteratom;
 pub use formatter::Rules;
 pub use formatter::Formatter;
 
+pub use iteratom::from_sexp;
+
 #[cfg(test)]
 mod test;
