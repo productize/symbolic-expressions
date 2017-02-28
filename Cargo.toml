@@ -1,6 +1,6 @@
 [package]
 name = "symbolic_expressions"
-version = "4.1.7"
+version = "4.1.8"
 authors = ["Joost Damad <joost@productize.be>"]
 license = "MIT/Apache-2.0"
 description = "A symbolic-expression parser/writer"
@@ -13,4 +13,4 @@ categories = ["text-processing", "parsing", "encoding"]
 travis-ci = { repository = "productize/symbolic-expressions" }
 
 [dependencies]
-error-chain = "0.8"
+error-chain = "0.10"
