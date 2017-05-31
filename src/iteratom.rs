@@ -59,7 +59,7 @@ impl<'a> IterAtom<'a> {
     {
         match self.iter.next() {
             Some(x) => get(x),
-            None => return Err(format!("missing {} field in {}", name, self.name).into()),
+            None => Err(format!("missing {} field in {}", name, self.name).into()),
         }
     }
 
@@ -155,7 +155,7 @@ impl<'a> IterAtom<'a> {
     pub fn maybe_literal_s(&mut self, l: &str) -> Option<String> {
         self.maybe(|x| {
             let z = x.s()?;
-            if &z == l {
+            if z == l {
                 Ok(z)
             } else {
                 Err("unexpected".into())
