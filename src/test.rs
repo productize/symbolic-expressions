@@ -126,52 +126,58 @@ fn test_number_string() {
 }
 
 #[test]
-#[should_panic(expected="End of file reached")]
+#[should_panic(expected = "End of file reached")]
 fn test_invalid1() {
     parse_fail("(")
 }
 
 #[test]
-#[should_panic(expected="Unexpected )")]
+#[should_panic(expected = "Unexpected )")]
 fn test_invalid2() {
     parse_fail(")")
 }
 
 #[test]
-#[should_panic(expected="End of file reached")]
+#[should_panic(expected = "End of file reached")]
 fn test_invalid3() {
     parse_fail("\"hello")
 }
 
 #[test]
-#[should_panic(expected="line: 4, col: 5")]
+#[should_panic(expected = "line: 4, col: 5")]
 fn test_invalid_check_position() {
-    parse_fail("\"hello
+    parse_fail(
+        "\"hello
 
 
-    ")
+    ",
+    )
 }
 
 #[test]
 fn test_complex() {
-    check_parse("(module SWITCH_3W_SIDE_MMP221-R (layer F.Cu) (descr \"\") (pad 1 thru_hole rect \
-                 (size 1.2 1.2) (at -2.5 -1.6 0) (layers *.Cu *.Mask) (drill 0.8)) (pad 2 \
-                 thru_hole rect (size 1.2 1.2) (at 0.0 -1.6 0) (layers *.Cu *.Mask) (drill 0.8)) \
-                 (pad 3 thru_hole rect (size 1.2 1.2) (at 2.5 -1.6 0) (layers *.Cu *.Mask) (drill \
-                 0.8)) (pad 5 thru_hole rect (size 1.2 1.2) (at 0.0 1.6 0) (layers *.Cu *.Mask) \
-                 (drill 0.8)) (pad 6 thru_hole rect (size 1.2 1.2) (at -2.5 1.6 0) (layers *.Cu \
-                 *.Mask) (drill 0.8)) (pad 4 thru_hole rect (size 1.2 1.2) (at 2.5 1.6 0) (layers \
-                 *.Cu *.Mask) (drill 0.8)) (fp_line (start -4.5 -1.75) (end 4.5 -1.75) (layer \
-                 F.SilkS) (width 0.127)) (fp_line (start 4.5 -1.75) (end 4.5 1.75) (layer \
-                 F.SilkS) (width 0.127)) (fp_line (start 4.5 1.75) (end -4.5 1.75) (layer \
-                 F.SilkS) (width 0.127)) (fp_line (start -4.5 1.75) (end -4.5 -1.75) (layer \
-                 F.SilkS) (width 0.127)))")
+    check_parse(
+        "(module SWITCH_3W_SIDE_MMP221-R (layer F.Cu) (descr \"\") (pad 1 thru_hole rect \
+         (size 1.2 1.2) (at -2.5 -1.6 0) (layers *.Cu *.Mask) (drill 0.8)) (pad 2 \
+         thru_hole rect (size 1.2 1.2) (at 0.0 -1.6 0) (layers *.Cu *.Mask) (drill 0.8)) \
+         (pad 3 thru_hole rect (size 1.2 1.2) (at 2.5 -1.6 0) (layers *.Cu *.Mask) (drill \
+         0.8)) (pad 5 thru_hole rect (size 1.2 1.2) (at 0.0 1.6 0) (layers *.Cu *.Mask) \
+         (drill 0.8)) (pad 6 thru_hole rect (size 1.2 1.2) (at -2.5 1.6 0) (layers *.Cu \
+         *.Mask) (drill 0.8)) (pad 4 thru_hole rect (size 1.2 1.2) (at 2.5 1.6 0) (layers \
+         *.Cu *.Mask) (drill 0.8)) (fp_line (start -4.5 -1.75) (end 4.5 -1.75) (layer \
+         F.SilkS) (width 0.127)) (fp_line (start 4.5 -1.75) (end 4.5 1.75) (layer \
+         F.SilkS) (width 0.127)) (fp_line (start 4.5 1.75) (end -4.5 1.75) (layer \
+         F.SilkS) (width 0.127)) (fp_line (start -4.5 1.75) (end -4.5 -1.75) (layer \
+         F.SilkS) (width 0.127)))",
+    )
 }
 
 #[test]
 fn test_kicad_1() {
-    check_parse_kicad("(module SILABS_EFM32_QFM24
-  (layer F.Cu))")
+    check_parse_kicad(
+        "(module SILABS_EFM32_QFM24
+  (layer F.Cu))",
+    )
 }
 
 #[test]
@@ -179,28 +185,34 @@ fn test_multiline() {
     let mut rules = formatter::Rules::new();
     rules.insert("foo", 1);
     rules.insert("mars", 1);
-    check_parse_rules("\
+    check_parse_rules(
+        "\
 (hello \"test it\"
   (foo bar)
   (mars venus))",
-                      rules)
+        rules,
+    )
 }
 
 #[test]
 fn test_multiline_two_empty() {
-    check_parse_res("\
+    check_parse_res(
+        "\
 (hello
 
 world)",
-                    "(hello world)")
+        "(hello world)",
+    )
 }
 
 #[test]
 fn test_fail_pcb() {
-    check_parse_kicad("\
+    check_parse_kicad(
+        "\
 (kicad_pcb (version 4) (host pcbnew \"(2015-05-31 BZR 5692)-product\")
   \
-                       (general))")
+                       (general))",
+    )
 }
 
 #[test]

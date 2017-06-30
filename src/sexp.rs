@@ -104,8 +104,8 @@ pub fn encode_string(s: &str) -> String {
     // s.contains('-') && s.len() > 1 && s.as_bytes()[0] != 45
     // }
     if s.contains('(') || s.contains(' ') || s.contains(')') || s.contains('\t') ||
-       s.contains('{') || s.contains('}') || s.contains('}') || s.contains('%') ||
-       s.is_empty()
+        s.contains('{') || s.contains('}') || s.contains('}') ||
+        s.contains('%') || s.is_empty()
     // || rule_4(s)
     {
         format!("\"{}\"", s)
@@ -116,21 +116,22 @@ pub fn encode_string(s: &str) -> String {
 
 impl Sexp {
     /// create an empty symbolic-expression
-    #[deprecated(since="4.0.0", note="please use `Sexp::default()` instead")]
+    #[deprecated(since = "4.0.0", note = "please use `Sexp::default()` instead")]
     pub fn new_empty() -> Sexp {
         Sexp::Empty
     }
 
     /// create a String type symbolic-expression
-    #[deprecated(since="4.0.3", note="please use `.into()` instead")]
+    #[deprecated(since = "4.0.3", note = "please use `.into()` instead")]
     pub fn new_string<T>(s: T) -> Sexp
-        where T: fmt::Display
+    where
+        T: fmt::Display,
     {
         format!("{}", s).into()
     }
 
     /// create a list type symbolic-expression
-    #[deprecated(since="4.0.3", note="please use `.into()` instead")]
+    #[deprecated(since = "4.0.3", note = "please use `.into()` instead")]
     pub fn new_list(v: Vec<Sexp>) -> Sexp {
         Sexp::List(v)
     }
@@ -155,7 +156,8 @@ impl Sexp {
     /// the name, the remainder is filled in via the provided
     /// fill function
     pub fn new_named_list<F>(name: &str, fill: F) -> Sexp
-        where F: Fn(&mut Vec<Sexp>)
+    where
+        F: Fn(&mut Vec<Sexp>),
     {
         let mut v = vec![];
         v.push(name.into());
@@ -166,9 +168,10 @@ impl Sexp {
     /// create a list type symbolic-expression where
     /// the first element of the list is a string that indicates
     /// the name
-    #[deprecated(since="4.0.3", note="please use `.into()` instead")]
+    #[deprecated(since = "4.0.3", note = "please use `.into()` instead")]
     pub fn new_named<T>(name: &str, value: T) -> Sexp
-        where T: fmt::Display
+    where
+        T: fmt::Display,
     {
         let mut v = vec![];
         v.push(name.into());
@@ -180,9 +183,10 @@ impl Sexp {
     /// the first element of the list is a string that indicates
     /// the name, and the second is another symbolic-expression
     /// created via the IntoSexp trait
-    #[deprecated(since="4.0.5", note="please use `.into()` on a tuple instead")]
+    #[deprecated(since = "4.0.5", note = "please use `.into()` on a tuple instead")]
     pub fn new_named_sexp<T>(name: &str, value: &T) -> Sexp
-        where T: IntoSexp
+    where
+        T: IntoSexp,
     {
         let mut v = vec![];
         v.push(name.into());
@@ -283,13 +287,15 @@ impl Sexp {
     /// access the symbolic-expression as if it is a named List
     /// where the name is provided and returns the remaining elements
     /// after the name as a slice
-    #[deprecated(since="4.1.4", note="please use `iteratom::IterAtom::new` instead")]
+    #[deprecated(since = "4.1.4", note = "please use `iteratom::IterAtom::new` instead")]
     pub fn slice_atom(&self, s: &str) -> Result<&[Sexp]> {
         let v = self.list()?;
         let v2 = &v[..];
         let st = v2[0].string()?;
         if st != s {
-            return Err(format!("list {} doesn't start with {}, but with {}", self, s, st).into());
+            return Err(
+                format!("list {} doesn't start with {}, but with {}", self, s, st).into(),
+            );
         };
         Ok(&v[1..])
     }
@@ -299,7 +305,9 @@ impl Sexp {
         let v2 = &v[..];
         let st = v2[0].string()?;
         if st != s {
-            return Err(format!("list {} doesn't start with {}, but with {}", self, s, st).into());
+            return Err(
+                format!("list {} doesn't start with {}, but with {}", self, s, st).into(),
+            );
         };
         Ok(&v[1..])
     }
@@ -339,20 +347,25 @@ impl Sexp {
     /// get the symbolic-expression as a list which starts
     /// with a string that indicates the name and has num more
     /// elements, returns those elements
-    #[deprecated(since="4.1.4", note="please use `iteratom::IterAtom::new` instead")]
+    #[deprecated(since = "4.1.4", note = "please use `iteratom::IterAtom::new` instead")]
     pub fn slice_atom_num(&self, s: &str, num: usize) -> Result<&[Sexp]> {
         let v = self.list()?;
         let v2 = &v[..];
         let st = v2[0].string()?;
         if st != s {
-            return Err(format!("list doesn't start with {}, but with {}", s, st).into());
+            return Err(
+                format!("list doesn't start with {}, but with {}", s, st).into(),
+            );
         };
         if v.len() != (num + 1) {
-            return Err(format!("list ({}) doesn't have {} elements but {}",
-                               s,
-                               num,
-                               v.len() - 1)
-                .into());
+            return Err(
+                format!(
+                    "list ({}) doesn't have {} elements but {}",
+                    s,
+                    num,
+                    v.len() - 1
+                ).into(),
+            );
         }
         Ok(&v[1..])
     }

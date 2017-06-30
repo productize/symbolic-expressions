@@ -15,7 +15,8 @@ struct Serializer<W, F = CompactFormatter> {
 
 // dispatches only based on Formatter
 impl<W> Serializer<W>
-    where W: io::Write
+where
+    W: io::Write,
 {
     fn new(writer: W) -> Self {
         Serializer::with_formatter(writer, CompactFormatter)
@@ -23,7 +24,8 @@ impl<W> Serializer<W>
 }
 
 impl<W> Serializer<W, RulesFormatter>
-    where W: io::Write
+where
+    W: io::Write,
 {
     fn new_rules(writer: W, rules: Rules) -> Self {
         Serializer::with_formatter(writer, RulesFormatter::new(rules))
@@ -31,8 +33,9 @@ impl<W> Serializer<W, RulesFormatter>
 }
 
 impl<W, F> Serializer<W, F>
-    where W: io::Write,
-          F: Formatter
+where
+    W: io::Write,
+    F: Formatter,
 {
     fn with_formatter(writer: W, formatter: F) -> Self {
         Serializer {
@@ -74,7 +77,8 @@ impl<W, F> Serializer<W, F>
 
 /// serialize a symbolic-expression to a Writer
 pub fn to_writer<W>(writer: &mut W, value: &Sexp) -> Result<()>
-    where W: io::Write
+where
+    W: io::Write,
 {
     let mut ser = Serializer::new(writer);
     ser.serialize(value)
@@ -82,8 +86,9 @@ pub fn to_writer<W>(writer: &mut W, value: &Sexp) -> Result<()>
 
 /// serialize a symbolic-expression to a Writer using a Formatter
 pub fn to_writer_with_formatter<W, F>(writer: &mut W, formatter: F, value: &Sexp) -> Result<()>
-    where W: io::Write,
-          F: Formatter
+where
+    W: io::Write,
+    F: Formatter,
 {
     let mut ser = Serializer::with_formatter(writer, formatter);
     ser.serialize(value)
@@ -91,7 +96,8 @@ pub fn to_writer_with_formatter<W, F>(writer: &mut W, formatter: F, value: &Sexp
 
 /// serialize a symbolic-expression to a Writer using a Rules Formatter
 pub fn to_writer_with_rules<W>(writer: &mut W, rules: Rules, value: &Sexp) -> Result<()>
-    where W: io::Write
+where
+    W: io::Write,
 {
     let mut ser = Serializer::new_rules(writer, rules);
     ser.serialize(value)
@@ -113,7 +119,8 @@ pub fn to_vec_with_rules(value: &Sexp, rules: Rules) -> Result<Vec<u8>> {
 
 /// serialize a symbolic-expression to a Vec<u8> using a Formatter
 pub fn to_vec_with_formatter<F>(value: &Sexp, formatter: F) -> Result<Vec<u8>>
-    where F: Formatter
+where
+    F: Formatter,
 {
     let mut writer = Vec::with_capacity(128);
     to_writer_with_formatter(&mut writer, formatter, value)?;
@@ -136,7 +143,8 @@ pub fn to_string_with_rules(value: &Sexp, rules: Rules) -> Result<String> {
 
 /// serialize a symbolic-expression to a String using a Formatter
 pub fn to_string_with_formatter<F>(value: &Sexp, formatter: F) -> Result<String>
-    where F: Formatter
+where
+    F: Formatter,
 {
     let vec = to_vec_with_formatter(value, formatter)?;
     let string = String::from_utf8(vec)?;

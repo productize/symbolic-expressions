@@ -8,7 +8,8 @@ pub use Result as SResult;
 
 /// convert an `&Sexp` to something
 pub trait FromSexp
-    where Self: Sized
+where
+    Self: Sized,
 {
     /// convert from a symbolic-expression to something
     fn from_sexp(&Sexp) -> SResult<Self>;
@@ -33,11 +34,17 @@ impl<'a> IterAtom<'a> {
         let v = s.list()?;
         let mut i = v.iter();
         let st = match i.next() {
-            None => return Err(format!("missing first element {} in list {}", name, s).into()),
+            None => {
+                return Err(
+                    format!("missing first element {} in list {}", name, s).into(),
+                )
+            }
             Some(e) => e.string()?,
         };
         if st != name {
-            return Err(format!("list {} doesn't start with {}, but with {}", s, name, st).into());
+            return Err(
+                format!("list {} doesn't start with {}, but with {}", s, name, st).into(),
+            );
         }
         let i = i.peekable();
         Ok(IterAtom {
@@ -55,7 +62,8 @@ impl<'a> IterAtom<'a> {
     }
 
     fn expect<T, F>(&mut self, name: &str, get: F) -> SResult<T>
-        where F: Fn(&Sexp) -> SResult<T>
+    where
+        F: Fn(&Sexp) -> SResult<T>,
     {
         match self.iter.next() {
             Some(x) => get(x),
@@ -121,7 +129,8 @@ impl<'a> IterAtom<'a> {
 
     /// maybe something while iterating a `Sexp` list
     fn maybe<X, F>(&mut self, convert: F) -> Option<X>
-        where F: Fn(&Sexp) -> SResult<X>
+    where
+        F: Fn(&Sexp) -> SResult<X>,
     {
         let res = match self.iter.peek() {
             None => None,

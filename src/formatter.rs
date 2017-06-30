@@ -9,31 +9,40 @@ use Sexp;
 /// trait for formatting the serialization of a symbolic-expression
 pub trait Formatter {
     /// Called when serializing a '('.
-    fn open<W>(&mut self, writer: &mut W, value: Option<&Sexp>) -> Result<()> where W: io::Write;
+    fn open<W>(&mut self, writer: &mut W, value: Option<&Sexp>) -> Result<()>
+    where
+        W: io::Write;
 
     /// Called when serializing a ' VAL'.
-    fn element<W>(&mut self, writer: &mut W, value: &Sexp) -> Result<()> where W: io::Write;
+    fn element<W>(&mut self, writer: &mut W, value: &Sexp) -> Result<()>
+    where
+        W: io::Write;
 
     /// Called when serializing a ')'.
-    fn close<W>(&mut self, writer: &mut W) -> Result<()> where W: io::Write;
+    fn close<W>(&mut self, writer: &mut W) -> Result<()>
+    where
+        W: io::Write;
 }
 
 pub struct CompactFormatter;
 
 impl Formatter for CompactFormatter {
     fn open<W>(&mut self, writer: &mut W, _value: Option<&Sexp>) -> Result<()>
-        where W: io::Write
+    where
+        W: io::Write,
     {
         writer.write_all(b"(").map_err(From::from)
     }
     fn element<W>(&mut self, writer: &mut W, _value: &Sexp) -> Result<()>
-        where W: io::Write
+    where
+        W: io::Write,
     {
         writer.write_all(b" ").map_err(From::from)
     }
 
     fn close<W>(&mut self, writer: &mut W) -> Result<()>
-        where W: io::Write
+    where
+        W: io::Write,
     {
         writer.write_all(b")").map_err(From::from)
     }
@@ -68,7 +77,8 @@ impl RulesFormatter {
 
 impl Formatter for RulesFormatter {
     fn open<W>(&mut self, writer: &mut W, value: Option<&Sexp>) -> Result<()>
-        where W: io::Write
+    where
+        W: io::Write,
     {
         // if first element is string and it has an indent setting
         if let Some(sexp) = value {
@@ -86,7 +96,8 @@ impl Formatter for RulesFormatter {
     }
 
     fn element<W>(&mut self, writer: &mut W, value: &Sexp) -> Result<()>
-        where W: io::Write
+    where
+        W: io::Write,
     {
         // if containing value is a list and it has indent_before
         // don't put the space
@@ -104,7 +115,8 @@ impl Formatter for RulesFormatter {
     }
 
     fn close<W>(&mut self, writer: &mut W) -> Result<()>
-        where W: io::Write
+    where
+        W: io::Write,
     {
         writer.write_all(b")").map_err(From::from)
     }
