@@ -3,7 +3,7 @@
 extern crate symbolic_expressions;
 
 fn main() {
-    let s = symbolic_expressions::parser::parse_file("examples/SILABS_EFM32_QFN24.kicad_mod")
-        .unwrap();
+    let s =
+        symbolic_expressions::parser::parse_file("examples/SILABS_EFM32_QFN24.kicad_mod").unwrap();
     println!("{}", s);
 }
