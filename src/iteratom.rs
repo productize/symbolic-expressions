@@ -134,12 +134,10 @@ impl<'a> IterAtom<'a> {
     {
         let res = match self.iter.peek() {
             None => None,
-            Some(s) => {
-                match convert(s) {
-                    Ok(t) => Some(t),
-                    Err(_) => None,
-                }
-            }
+            Some(s) => match convert(s) {
+                Ok(t) => Some(t),
+                Err(_) => None,
+            },
         };
         match res {
             Some(x) => {

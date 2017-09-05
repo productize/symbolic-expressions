@@ -1,14 +1,14 @@
 // (c) 2017 Productize SPRL <joost@productize.be>
 
-extern crate symbolic_expressions;
 #[macro_use]
 extern crate error_chain;
+extern crate symbolic_expressions;
 
 mod error {
     use symbolic_expressions;
 
     error_chain! {
-        
+
         links {
             SymbolicExpression(symbolic_expressions::Error, symbolic_expressions::ErrorKind) #[doc = "symbolic expression library error"];
         }

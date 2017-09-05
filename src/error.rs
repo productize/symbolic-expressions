@@ -13,7 +13,7 @@ error_chain! {
             display("parse error: '{}'", s)
         }
     }
-    
+
     foreign_links {
         Io(io::Error) #[doc = "IO error"];
         FromUtf8(string::FromUtf8Error) #[doc = "Utf8 error"];

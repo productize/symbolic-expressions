@@ -104,8 +104,8 @@ pub fn encode_string(s: &str) -> String {
     // s.contains('-') && s.len() > 1 && s.as_bytes()[0] != 45
     // }
     if s.contains('(') || s.contains(' ') || s.contains(')') || s.contains('\t') ||
-        s.contains('{') || s.contains('}') || s.contains('}') ||
-        s.contains('%') || s.is_empty()
+        s.contains('{') || s.contains('}') || s.contains('}') || s.contains('%') ||
+        s.is_empty()
     // || rule_4(s)
     {
         format!("\"{}\"", s)
