@@ -103,9 +103,8 @@ pub fn encode_string(s: &str) -> String {
     // fn rule_4(s:&str) -> bool {
     // s.contains('-') && s.len() > 1 && s.as_bytes()[0] != 45
     // }
-    if s.contains('(') || s.contains(' ') || s.contains(')') || s.contains('\t') ||
-        s.contains('{') || s.contains('}') || s.contains('}') || s.contains('%') ||
-        s.is_empty()
+    if s.contains('(') || s.contains(' ') || s.contains(')') || s.contains('\t') || s.contains('{')
+        || s.contains('}') || s.contains('}') || s.contains('%') || s.is_empty()
     // || rule_4(s)
     {
         format!("\"{}\"", s)
@@ -293,9 +292,7 @@ impl Sexp {
         let v2 = &v[..];
         let st = v2[0].string()?;
         if st != s {
-            return Err(
-                format!("list {} doesn't start with {}, but with {}", self, s, st).into(),
-            );
+            return Err(format!("list {} doesn't start with {}, but with {}", self, s, st).into());
         };
         Ok(&v[1..])
     }
@@ -305,9 +302,7 @@ impl Sexp {
         let v2 = &v[..];
         let st = v2[0].string()?;
         if st != s {
-            return Err(
-                format!("list {} doesn't start with {}, but with {}", self, s, st).into(),
-            );
+            return Err(format!("list {} doesn't start with {}, but with {}", self, s, st).into());
         };
         Ok(&v[1..])
     }
@@ -353,9 +348,7 @@ impl Sexp {
         let v2 = &v[..];
         let st = v2[0].string()?;
         if st != s {
-            return Err(
-                format!("list doesn't start with {}, but with {}", s, st).into(),
-            );
+            return Err(format!("list doesn't start with {}, but with {}", s, st).into());
         };
         if v.len() != (num + 1) {
             return Err(

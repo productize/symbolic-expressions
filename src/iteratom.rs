@@ -34,17 +34,11 @@ impl<'a> IterAtom<'a> {
         let v = s.list()?;
         let mut i = v.iter();
         let st = match i.next() {
-            None => {
-                return Err(
-                    format!("missing first element {} in list {}", name, s).into(),
-                )
-            }
+            None => return Err(format!("missing first element {} in list {}", name, s).into()),
             Some(e) => e.string()?,
         };
         if st != name {
-            return Err(
-                format!("list {} doesn't start with {}, but with {}", s, name, st).into(),
-            );
+            return Err(format!("list {} doesn't start with {}, but with {}", s, name, st).into());
         }
         let i = i.peekable();
         Ok(IterAtom {
