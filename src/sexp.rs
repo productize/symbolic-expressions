@@ -2,7 +2,6 @@
 
 use std::fmt;
 use std::result;
-use std::str::FromStr;
 use std::mem;
 
 use Result;
@@ -68,8 +67,12 @@ impl<'a, T: fmt::Display> From<(&'a str, &'a T)> for Sexp {
     }
 }
 
-/// a symbolic-expression
+/// a symbolic-expression structure
 /// Can be a string or a list or nothing
+///
+/// `String` shape: hello
+/// `List` shape: (...)
+/// `Empty shape: 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Sexp {
     /// plain String symbolic-expression
@@ -154,6 +157,8 @@ impl Sexp {
     /// the first element of the list is a string that indicates
     /// the name, the remainder is filled in via the provided
     /// fill function
+    ///
+    /// shape: (name ...)
     pub fn new_named_list<F>(name: &str, fill: F) -> Sexp
     where
         F: Fn(&mut Vec<Sexp>),
@@ -193,7 +198,8 @@ impl Sexp {
         Sexp::List(v)
     }
 
-    /// if the expression is a list, take out the list and swap it with Empty
+    /// if the expression is a list, extract the `Vec<Sexp>`
+    /// from it and swap it with Empty
     pub fn take_list(&mut self) -> Result<Vec<Sexp>> {
         let mut e = Sexp::Empty;
         mem::swap(&mut e, self);
@@ -203,7 +209,7 @@ impl Sexp {
         }
     }
 
-    /// if the expression is a string, take it out and swap it with Empty
+    /// if the expression is a `String`, take it out and swap it with Empty
     pub fn take_string(&mut self) -> Result<String> {
         let mut e = Sexp::Empty;
         mem::swap(&mut e, self);
@@ -213,7 +219,7 @@ impl Sexp {
         }
     }
 
-    /// create a symbolic-expression via the IntoSexp trait
+    /// create a symbolic-expression via the `IntoSexp` trait
     pub fn from<T: IntoSexp>(t: &T) -> Sexp {
         t.into_sexp()
     }
@@ -262,7 +268,7 @@ impl Sexp {
     /// that is a f64
     pub fn f(&self) -> Result<f64> {
         let s = self.string()?;
-        let f = f64::from_str(s)?;
+        let f = s.parse()?;
         Ok(f)
     }
 
@@ -270,7 +276,7 @@ impl Sexp {
     /// that is an i64
     pub fn i(&self) -> Result<i64> {
         let s = self.string()?;
-        let i = i64::from_str(s)?;
+        let i = s.parse()?;
         Ok(i)
     }
 
