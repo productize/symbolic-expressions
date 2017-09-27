@@ -1,6 +1,6 @@
 [package]
 name = "symbolic_expressions"
-version = "4.1.10"
+version = "4.1.11"
 authors = ["Joost Damad <joost@productize.be>"]
 license = "MIT/Apache-2.0"
 description = "A symbolic-expression parser/writer"
