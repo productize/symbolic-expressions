@@ -6,7 +6,7 @@ use std::num;
 
 /// errors that can happen in this library
 #[derive(Debug)]
-pub enum Error {
+pub enum SexpError {
     /// parse error
     Parse(ParseError),
     /// other error
@@ -20,6 +20,8 @@ pub enum Error {
     /// integer parsing error
     Int(num::ParseIntError),
 }
+
+pub use SexpError as Error;
 
 /// detailed symbolic-expression parse error information
 #[derive(Debug)]
