@@ -3,6 +3,8 @@
 use std::string;
 use std::io;
 use std::num;
+use std::error;
+use std::fmt;
 
 /// errors that can happen in this library
 #[derive(Debug)]
@@ -22,6 +24,37 @@ pub enum SexpError {
 }
 
 pub use SexpError as Error;
+
+// TODO: get rid of this again later
+impl fmt::Display for SexpError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+        match *self {
+            SexpError::Parse(ref pe) => write!(f, "symbolic expression parse error: {:?}", pe),
+            SexpError::Other(ref s) => write!(f, "symbolic expression other error: {}", s),
+            SexpError::Io(ref e) => e.fmt(f),
+            SexpError::FromUtf8(ref e) => e.fmt(f),
+            SexpError::Float(ref e) => e.fmt(f),
+            SexpError::Int(ref e) => e.fmt(f),
+        }
+    }
+}
+
+// TODO: get rid of this again later
+impl error::Error for SexpError {
+    fn description(&self) -> &str {
+        "symbolic expressions error"
+    }
+
+    fn cause(&self) -> Option<&error::Error> {
+        match *self {
+            SexpError::Parse(_) | SexpError::Other(_) => None,
+            SexpError::Io(ref e) => Some(e),
+            SexpError::FromUtf8(ref e) => Some(e),
+            SexpError::Float(ref e) => Some(e),
+            SexpError::Int(ref e) => Some(e),
+        }
+    }
+}
 
 /// detailed symbolic-expression parse error information
 #[derive(Debug)]
