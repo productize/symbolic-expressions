@@ -23,8 +23,6 @@ pub enum SexpError {
     Int(num::ParseIntError),
 }
 
-pub use SexpError as Error;
-
 // TODO: get rid of this again later
 impl fmt::Display for SexpError {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
@@ -64,48 +62,48 @@ pub struct ParseError {
     col: usize,
 }
 
-impl From<io::Error> for Error {
-    fn from(e: io::Error) -> Error {
-        Error::Io(e)
+impl From<io::Error> for SexpError {
+    fn from(e: io::Error) -> SexpError {
+        SexpError::Io(e)
     }
 }
 
-impl From<String> for Error {
-    fn from(e: String) -> Error {
-        Error::Other(e)
+impl From<String> for SexpError {
+    fn from(e: String) -> SexpError {
+        SexpError::Other(e)
     }
 }
 
-impl<'a> From<&'a str> for Error {
-    fn from(e: &'a str) -> Error {
-        Error::Other(e.into())
+impl<'a> From<&'a str> for SexpError {
+    fn from(e: &'a str) -> SexpError {
+        SexpError::Other(e.into())
     }
 }
 
-impl From<string::FromUtf8Error> for Error {
-    fn from(e: string::FromUtf8Error) -> Error {
-        Error::FromUtf8(e)
+impl From<string::FromUtf8Error> for SexpError {
+    fn from(e: string::FromUtf8Error) -> SexpError {
+        SexpError::FromUtf8(e)
     }
 }
 
-impl From<num::ParseFloatError> for Error {
-    fn from(e: num::ParseFloatError) -> Error {
-        Error::Float(e)
+impl From<num::ParseFloatError> for SexpError {
+    fn from(e: num::ParseFloatError) -> SexpError {
+        SexpError::Float(e)
     }
 }
 
-impl From<num::ParseIntError> for Error {
-    fn from(e: num::ParseIntError) -> Error {
-        Error::Int(e)
+impl From<num::ParseIntError> for SexpError {
+    fn from(e: num::ParseIntError) -> SexpError {
+        SexpError::Int(e)
     }
 }
 
 /// utility function that creates a symbolic-expressions Error Result for a parser error
-pub fn parse_error<T>(line: usize, col: usize, msg: String) -> Result<T, Error> {
+pub fn parse_error<T>(line: usize, col: usize, msg: String) -> Result<T, SexpError> {
     let pe = ParseError {
         msg: msg,
         line: line,
         col: col,
     };
-    Err(Error::Parse(pe))
+    Err(SexpError::Parse(pe))
 }

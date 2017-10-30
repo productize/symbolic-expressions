@@ -3,7 +3,7 @@
 use std::fmt;
 use std::mem;
 
-use error::Error;
+use error::SexpError;
 /// like Into trait but works from a ref avoiding consumption or expensive clone
 pub trait IntoSexp {
     /// convert self into a Sexp
@@ -199,7 +199,7 @@ impl Sexp {
 
     /// if the expression is a list, extract the `Vec<Sexp>`
     /// from it and swap it with Empty
-    pub fn take_list(&mut self) -> Result<Vec<Sexp>, Error> {
+    pub fn take_list(&mut self) -> Result<Vec<Sexp>, SexpError> {
         let mut e = Sexp::Empty;
         mem::swap(&mut e, self);
         match e {
@@ -209,7 +209,7 @@ impl Sexp {
     }
 
     /// if the expression is a `String`, take it out and swap it with Empty
-    pub fn take_string(&mut self) -> Result<String, Error> {
+    pub fn take_string(&mut self) -> Result<String, SexpError> {
         let mut e = Sexp::Empty;
         mem::swap(&mut e, self);
         match e {
@@ -224,7 +224,7 @@ impl Sexp {
     }
 
     /// access the symbolic-expression as if it is a List
-    pub fn list(&self) -> Result<&Vec<Sexp>, Error> {
+    pub fn list(&self) -> Result<&Vec<Sexp>, SexpError> {
         match *self {
             Sexp::List(ref v) => Ok(v),
             _ => Err(format!("not a list: {}", self).into()),
@@ -232,7 +232,7 @@ impl Sexp {
     }
 
     /// access the symbolic-expression as if it is an `&String`
-    pub fn string(&self) -> Result<&String, Error> {
+    pub fn string(&self) -> Result<&String, SexpError> {
         match *self {
             Sexp::String(ref s) => Ok(s),
             _ => Err(format!("not a string: {}", self).into()),
@@ -240,7 +240,7 @@ impl Sexp {
     }
 
     /// access the symbolic-expression as if it is a `String`
-    pub fn s(&self) -> Result<String, Error> {
+    pub fn s(&self) -> Result<String, SexpError> {
         match *self {
             Sexp::String(ref s) => Ok(s.clone()),
             _ => Err(format!("not a string: {}", self).into()),
@@ -265,7 +265,7 @@ impl Sexp {
 
     /// access the symbolic-expression as if it is a String
     /// that is a f64
-    pub fn f(&self) -> Result<f64, Error> {
+    pub fn f(&self) -> Result<f64, SexpError> {
         let s = self.string()?;
         let f = s.parse()?;
         Ok(f)
@@ -273,7 +273,7 @@ impl Sexp {
 
     /// access the symbolic-expression as if it is a String
     /// that is an i64
-    pub fn i(&self) -> Result<i64, Error> {
+    pub fn i(&self) -> Result<i64, SexpError> {
         let s = self.string()?;
         let i = s.parse()?;
         Ok(i)
@@ -281,7 +281,7 @@ impl Sexp {
 
     /// access the symbolic-expression as if it is a List
     /// assuming the first element is a String and return that
-    pub fn list_name(&self) -> Result<&String, Error> {
+    pub fn list_name(&self) -> Result<&String, SexpError> {
         let l = self.list()?;
         let l = &l[..];
         let a = l[0].string()?;
@@ -292,7 +292,7 @@ impl Sexp {
     /// where the name is provided and returns the remaining elements
     /// after the name as a slice
     #[deprecated(since = "4.1.4", note = "please use `iteratom::IterAtom::new` instead")]
-    pub fn slice_atom(&self, s: &str) -> Result<&[Sexp], Error> {
+    pub fn slice_atom(&self, s: &str) -> Result<&[Sexp], SexpError> {
         let v = self.list()?;
         let v2 = &v[..];
         let st = v2[0].string()?;
@@ -302,7 +302,7 @@ impl Sexp {
         Ok(&v[1..])
     }
 
-    fn slice_atom_int(&self, s: &str) -> Result<&[Sexp], Error> {
+    fn slice_atom_int(&self, s: &str) -> Result<&[Sexp], SexpError> {
         let v = self.list()?;
         let v2 = &v[..];
         let st = v2[0].string()?;
@@ -315,7 +315,7 @@ impl Sexp {
     /// access the symbolic-expression as if it is a named List
     /// with two elements where the name is provided and returns
     /// the next element in the list
-    pub fn named_value(&self, s: &str) -> Result<&Sexp, Error> {
+    pub fn named_value(&self, s: &str) -> Result<&Sexp, SexpError> {
         let v = self.list()?;
         if v.len() != 2 {
             return Err(format!("list {} is not a named_value", s).into());
@@ -325,22 +325,22 @@ impl Sexp {
     }
 
     /// as named_value but converted to i64
-    pub fn named_value_i(&self, s: &str) -> Result<i64, Error> {
+    pub fn named_value_i(&self, s: &str) -> Result<i64, SexpError> {
         self.named_value(s)?.i()
     }
 
     /// as named_value but converted to f64
-    pub fn named_value_f(&self, s: &str) -> Result<f64, Error> {
+    pub fn named_value_f(&self, s: &str) -> Result<f64, SexpError> {
         self.named_value(s)?.f()
     }
 
     /// as named_value but converted to `&String`
-    pub fn named_value_string(&self, s: &str) -> Result<&String, Error> {
+    pub fn named_value_string(&self, s: &str) -> Result<&String, SexpError> {
         self.named_value(s)?.string()
     }
 
     /// as named_value but converted to `String`
-    pub fn named_value_s(&self, s: &str) -> Result<String, Error> {
+    pub fn named_value_s(&self, s: &str) -> Result<String, SexpError> {
         Ok(self.named_value(s)?.string()?.clone())
     }
 
@@ -348,7 +348,7 @@ impl Sexp {
     /// with a string that indicates the name and has num more
     /// elements, returns those elements
     #[deprecated(since = "4.1.4", note = "please use `iteratom::IterAtom::new` instead")]
-    pub fn slice_atom_num(&self, s: &str, num: usize) -> Result<&[Sexp], Error> {
+    pub fn slice_atom_num(&self, s: &str, num: usize) -> Result<&[Sexp], SexpError> {
         let v = self.list()?;
         let v2 = &v[..];
         let st = v2[0].string()?;

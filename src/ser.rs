@@ -5,7 +5,7 @@ use std::io;
 use formatter::*;
 
 use Sexp;
-use error::Error;
+use error::SexpError;
 use encode_string;
 
 struct Serializer<W, F = CompactFormatter> {
@@ -44,11 +44,11 @@ where
         }
     }
 
-    fn serialize_str(&mut self, value: &str) -> Result<(), Error> {
+    fn serialize_str(&mut self, value: &str) -> Result<(), SexpError> {
         write!(&mut self.writer, "{}", encode_string(value)).map_err(From::from)
     }
 
-    fn serialize(&mut self, value: &Sexp) -> Result<(), Error> {
+    fn serialize(&mut self, value: &Sexp) -> Result<(), SexpError> {
         match *value {
             Sexp::String(ref s) => self.serialize_str(s),
             Sexp::List(ref list) => {
@@ -75,7 +75,7 @@ where
 }
 
 /// serialize a symbolic-expression to a Writer
-pub fn to_writer<W>(writer: &mut W, value: &Sexp) -> Result<(), Error>
+pub fn to_writer<W>(writer: &mut W, value: &Sexp) -> Result<(), SexpError>
 where
     W: io::Write,
 {
@@ -88,7 +88,7 @@ pub fn to_writer_with_formatter<W, F>(
     writer: &mut W,
     formatter: F,
     value: &Sexp,
-) -> Result<(), Error>
+) -> Result<(), SexpError>
 where
     W: io::Write,
     F: Formatter,
@@ -98,7 +98,7 @@ where
 }
 
 /// serialize a symbolic-expression to a Writer using a Rules Formatter
-pub fn to_writer_with_rules<W>(writer: &mut W, rules: Rules, value: &Sexp) -> Result<(), Error>
+pub fn to_writer_with_rules<W>(writer: &mut W, rules: Rules, value: &Sexp) -> Result<(), SexpError>
 where
     W: io::Write,
 {
@@ -107,21 +107,21 @@ where
 }
 
 /// serialize a symbolic-expression to a Vec<u8>
-pub fn to_vec(value: &Sexp) -> Result<Vec<u8>, Error> {
+pub fn to_vec(value: &Sexp) -> Result<Vec<u8>, SexpError> {
     let mut writer = Vec::with_capacity(128);
     to_writer(&mut writer, value)?;
     Ok(writer)
 }
 
 /// serialize a symbolic-expression to a Vec<u8> using Rules
-pub fn to_vec_with_rules(value: &Sexp, rules: Rules) -> Result<Vec<u8>, Error> {
+pub fn to_vec_with_rules(value: &Sexp, rules: Rules) -> Result<Vec<u8>, SexpError> {
     let mut writer = Vec::with_capacity(128);
     to_writer_with_rules(&mut writer, rules, value)?;
     Ok(writer)
 }
 
 /// serialize a symbolic-expression to a Vec<u8> using a Formatter
-pub fn to_vec_with_formatter<F>(value: &Sexp, formatter: F) -> Result<Vec<u8>, Error>
+pub fn to_vec_with_formatter<F>(value: &Sexp, formatter: F) -> Result<Vec<u8>, SexpError>
 where
     F: Formatter,
 {
@@ -131,21 +131,21 @@ where
 }
 
 /// serialize a symbolic-expression to a String
-pub fn to_string(value: &Sexp) -> Result<String, Error> {
+pub fn to_string(value: &Sexp) -> Result<String, SexpError> {
     let vec = to_vec(value)?;
     let string = String::from_utf8(vec)?;
     Ok(string)
 }
 
 /// serialize a symbolic-expression to a String using Rules
-pub fn to_string_with_rules(value: &Sexp, rules: Rules) -> Result<String, Error> {
+pub fn to_string_with_rules(value: &Sexp, rules: Rules) -> Result<String, SexpError> {
     let vec = to_vec_with_rules(value, rules)?;
     let string = String::from_utf8(vec)?;
     Ok(string)
 }
 
 /// serialize a symbolic-expression to a String using a Formatter
-pub fn to_string_with_formatter<F>(value: &Sexp, formatter: F) -> Result<String, Error>
+pub fn to_string_with_formatter<F>(value: &Sexp, formatter: F) -> Result<String, SexpError>
 where
     F: Formatter,
 {

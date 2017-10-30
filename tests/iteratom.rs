@@ -2,21 +2,21 @@
 
 extern crate symbolic_expressions;
 
-use symbolic_expressions::Error;
+use symbolic_expressions::SexpError;
 use symbolic_expressions::iteratom::*;
 use symbolic_expressions::Sexp;
 
 struct Qq(i64);
 
 impl FromSexp for Qq {
-    fn from_sexp(s: &Sexp) -> Result<Self, Error> {
+    fn from_sexp(s: &Sexp) -> Result<Self, SexpError> {
         let i = s.named_value_i("d")?;
         Ok(Qq(i))
     }
 }
 
 
-fn test_int() -> Result<(), Error> {
+fn test_int() -> Result<(), SexpError> {
     let s = "(a (b c) (d 42))";
     let s = symbolic_expressions::parser::parse_str(s)?;
     let mut i = IterAtom::new(&s, "a")?;
