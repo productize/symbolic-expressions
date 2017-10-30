@@ -3,23 +3,23 @@
 use std::io;
 use std::collections::HashMap;
 
-use Result;
+use error::Error;
 use Sexp;
 
 /// trait for formatting the serialization of a symbolic-expression
 pub trait Formatter {
     /// Called when serializing a '('.
-    fn open<W>(&mut self, writer: &mut W, value: Option<&Sexp>) -> Result<()>
+    fn open<W>(&mut self, writer: &mut W, value: Option<&Sexp>) -> Result<(), Error>
     where
         W: io::Write;
 
     /// Called when serializing a ' VAL'.
-    fn element<W>(&mut self, writer: &mut W, value: &Sexp) -> Result<()>
+    fn element<W>(&mut self, writer: &mut W, value: &Sexp) -> Result<(), Error>
     where
         W: io::Write;
 
     /// Called when serializing a ')'.
-    fn close<W>(&mut self, writer: &mut W) -> Result<()>
+    fn close<W>(&mut self, writer: &mut W) -> Result<(), Error>
     where
         W: io::Write;
 }
@@ -27,20 +27,20 @@ pub trait Formatter {
 pub struct CompactFormatter;
 
 impl Formatter for CompactFormatter {
-    fn open<W>(&mut self, writer: &mut W, _value: Option<&Sexp>) -> Result<()>
+    fn open<W>(&mut self, writer: &mut W, _value: Option<&Sexp>) -> Result<(), Error>
     where
         W: io::Write,
     {
         writer.write_all(b"(").map_err(From::from)
     }
-    fn element<W>(&mut self, writer: &mut W, _value: &Sexp) -> Result<()>
+    fn element<W>(&mut self, writer: &mut W, _value: &Sexp) -> Result<(), Error>
     where
         W: io::Write,
     {
         writer.write_all(b" ").map_err(From::from)
     }
 
-    fn close<W>(&mut self, writer: &mut W) -> Result<()>
+    fn close<W>(&mut self, writer: &mut W) -> Result<(), Error>
     where
         W: io::Write,
     {
@@ -76,7 +76,7 @@ impl RulesFormatter {
 }
 
 impl Formatter for RulesFormatter {
-    fn open<W>(&mut self, writer: &mut W, value: Option<&Sexp>) -> Result<()>
+    fn open<W>(&mut self, writer: &mut W, value: Option<&Sexp>) -> Result<(), Error>
     where
         W: io::Write,
     {
@@ -95,7 +95,7 @@ impl Formatter for RulesFormatter {
         writer.write_all(b"(").map_err(From::from)
     }
 
-    fn element<W>(&mut self, writer: &mut W, value: &Sexp) -> Result<()>
+    fn element<W>(&mut self, writer: &mut W, value: &Sexp) -> Result<(), Error>
     where
         W: io::Write,
     {
@@ -114,7 +114,7 @@ impl Formatter for RulesFormatter {
         writer.write_all(b" ").map_err(From::from)
     }
 
-    fn close<W>(&mut self, writer: &mut W) -> Result<()>
+    fn close<W>(&mut self, writer: &mut W) -> Result<(), Error>
     where
         W: io::Write,
     {

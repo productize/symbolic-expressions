@@ -1,9 +1,8 @@
-// (c) 2016 Productize SPRL <joost@productize.be>
+// (c) 2016-2017 Productize SPRL <joost@productize.be>
 
-use Result;
+use error::Error;
 use Sexp;
 use parse_error;
-use std::result;
 use std::io;
 use std::fs::File;
 use std::io::prelude::*;
@@ -17,12 +16,12 @@ struct Parser {
 }
 
 impl Parser {
-    fn peek(&self) -> Result<char> {
+    fn peek(&self) -> Result<char, Error> {
         self.fail_on_eof()?;
         Ok(self.data[self.position])
     }
 
-    fn get(&mut self) -> Result<char> {
+    fn get(&mut self) -> Result<char, Error> {
         self.fail_on_eof()?;
         let c = self.data[self.position];
         self.position += 1;
@@ -55,7 +54,7 @@ impl Parser {
         }
     }
 
-    fn eat_char(&mut self, c: char) -> Result<()> {
+    fn eat_char(&mut self, c: char) -> Result<(), Error> {
         let c2 = self.get()?;
         if c != c2 {
             self.parse_error(&format!("expected {} got {}", c, c2))
@@ -68,20 +67,20 @@ impl Parser {
         self.position >= self.data.len()
     }
 
-    fn fail_on_eof(&self) -> Result<()> {
+    fn fail_on_eof(&self) -> Result<(), Error> {
         if self.eof() {
             return self.parse_error("End of file reached");
         }
         Ok(())
     }
 
-    fn parse_error<T>(&self, msg: &str) -> Result<T> {
+    fn parse_error<T>(&self, msg: &str) -> Result<T, Error> {
         parse_error(self.line + 1, self.line_position + 1, msg.to_string())
     }
 }
 
 /// parse a &str to a symbolic-expression
-pub fn parse_str(sexp: &str) -> Result<Sexp> {
+pub fn parse_str(sexp: &str) -> Result<Sexp, Error> {
     if sexp.is_empty() {
         return Ok(Sexp::default());
     }
@@ -90,7 +89,7 @@ pub fn parse_str(sexp: &str) -> Result<Sexp> {
     parse(&mut parser)
 }
 
-fn parse(parser: &mut Parser) -> Result<Sexp> {
+fn parse(parser: &mut Parser) -> Result<Sexp, Error> {
     parser.eat_space();
     let c = parser.peek()?;
     if c == '(' {
@@ -104,7 +103,7 @@ fn parse(parser: &mut Parser) -> Result<Sexp> {
     }
 }
 
-fn parse_list(parser: &mut Parser) -> Result<Sexp> {
+fn parse_list(parser: &mut Parser) -> Result<Sexp, Error> {
     parser.eat_char('(')?;
     let mut v = vec![];
     while !parser.eof() {
@@ -123,7 +122,7 @@ fn parse_list(parser: &mut Parser) -> Result<Sexp> {
     Ok(Sexp::List(v))
 }
 
-fn parse_quoted_string(parser: &mut Parser) -> Result<Sexp> {
+fn parse_quoted_string(parser: &mut Parser) -> Result<Sexp, Error> {
     let mut s = String::new();
     parser.eat_char('"')?;
     // note that escaped quotes are actually not allowed
@@ -148,7 +147,7 @@ fn parse_quoted_string(parser: &mut Parser) -> Result<Sexp> {
     Ok(Sexp::String(s))
 }
 
-fn parse_bare_string(parser: &mut Parser) -> Result<Sexp> {
+fn parse_bare_string(parser: &mut Parser) -> Result<Sexp, Error> {
     let mut s = String::new();
     while !parser.eof() {
         let c = parser.peek()?;
@@ -161,7 +160,7 @@ fn parse_bare_string(parser: &mut Parser) -> Result<Sexp> {
     Ok(Sexp::String(s))
 }
 
-fn read_file(name: &str) -> result::Result<String, io::Error> {
+fn read_file(name: &str) -> Result<String, io::Error> {
     let mut f = File::open(name)?;
     let mut s = String::new();
     f.read_to_string(&mut s)?;
@@ -169,7 +168,7 @@ fn read_file(name: &str) -> result::Result<String, io::Error> {
 }
 
 /// parse a file as a symbolic-expression
-pub fn parse_file(name: &str) -> Result<Sexp> {
+pub fn parse_file(name: &str) -> Result<Sexp, Error> {
     let s = read_file(name)?;
     parse_str(&s[..])
 }

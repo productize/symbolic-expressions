@@ -1,35 +1,22 @@
 // (c) 2017 Productize SPRL <joost@productize.be>
 
-#[macro_use]
-extern crate error_chain;
 extern crate symbolic_expressions;
 
-mod error {
-    use symbolic_expressions;
-
-    error_chain! {
-
-        links {
-            SymbolicExpression(symbolic_expressions::Error, symbolic_expressions::ErrorKind) #[doc = "symbolic expression library error"];
-        }
-    }
-}
-
-use error::*;
+use symbolic_expressions::Error;
 use symbolic_expressions::iteratom::*;
 use symbolic_expressions::Sexp;
 
 struct Qq(i64);
 
 impl FromSexp for Qq {
-    fn from_sexp(s: &Sexp) -> SResult<Self> {
+    fn from_sexp(s: &Sexp) -> Result<Self, Error> {
         let i = s.named_value_i("d")?;
         Ok(Qq(i))
     }
 }
 
 
-fn test_int() -> Result<()> {
+fn test_int() -> Result<(), Error> {
     let s = "(a (b c) (d 42))";
     let s = symbolic_expressions::parser::parse_str(s)?;
     let mut i = IterAtom::new(&s, "a")?;

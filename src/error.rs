@@ -4,22 +4,21 @@ use std::string;
 use std::io;
 use std::num;
 
-error_chain! {
-
-    errors {
-        /// parser error
-        Parse(t: ParseError, s: String) {
-            description("parse error")
-            display("parse error: '{}'", s)
-        }
-    }
-
-    foreign_links {
-        Io(io::Error) #[doc = "IO error"];
-        FromUtf8(string::FromUtf8Error) #[doc = "Utf8 error"];
-        Float(num::ParseFloatError) #[doc = "Float error"];
-        Int(num::ParseIntError) #[doc = "Int error"];
-    }
+/// errors that can happen in this library
+#[derive(Debug)]
+pub enum Error {
+    /// parse error
+    Parse(ParseError),
+    /// other error
+    Other(String),
+    /// IO Error
+    Io(io::Error),
+    /// Utf8 Error parsing error
+    FromUtf8(string::FromUtf8Error),
+    /// floating point parsing error
+    Float(num::ParseFloatError),
+    /// integer parsing error
+    Int(num::ParseIntError),
 }
 
 /// detailed symbolic-expression parse error information
@@ -30,13 +29,48 @@ pub struct ParseError {
     col: usize,
 }
 
+impl From<io::Error> for Error {
+    fn from(e: io::Error) -> Error {
+        Error::Io(e)
+    }
+}
+
+impl From<String> for Error {
+    fn from(e: String) -> Error {
+        Error::Other(e)
+    }
+}
+
+impl<'a> From<&'a str> for Error {
+    fn from(e: &'a str) -> Error {
+        Error::Other(e.into())
+    }
+}
+
+impl From<string::FromUtf8Error> for Error {
+    fn from(e: string::FromUtf8Error) -> Error {
+        Error::FromUtf8(e)
+    }
+}
+
+impl From<num::ParseFloatError> for Error {
+    fn from(e: num::ParseFloatError) -> Error {
+        Error::Float(e)
+    }
+}
+
+impl From<num::ParseIntError> for Error {
+    fn from(e: num::ParseIntError) -> Error {
+        Error::Int(e)
+    }
+}
+
 /// utility function that creates a symbolic-expressions Error Result for a parser error
-pub fn parse_error<T>(line: usize, col: usize, msg: String) -> Result<T> {
+pub fn parse_error<T>(line: usize, col: usize, msg: String) -> Result<T, Error> {
     let pe = ParseError {
         msg: msg,
         line: line,
         col: col,
     };
-    let s = format!("Parse Error: {}:{} {}", line, col, pe.msg);
-    Err(ErrorKind::Parse(pe, s).into())
+    Err(Error::Parse(pe))
 }
