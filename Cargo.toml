@@ -1,13 +1,15 @@
 [package]
-name = "symbolic_expressions"
+name = "generic_symbolic_expressions"
 version = "5.0.3"
-authors = ["Joost Damad <joost@productize.be>"]
+authors = [
+  "Joost Damad <joost@productize.be>, Oliver Flatt <oflatt@cs.washington.edu>",
+]
 license = "MIT/Apache-2.0"
-description = "A symbolic-expression parser/writer"
-repository = "https://github.com/productize/symbolic-expressions"
-keywords = ["sexp","s-exp","symbolic","kicad"]
-documentation = "https://docs.rs/symbolic_expressions"
+description = "This crate is a fork of symbolic-expressions, which tweaks it to be more normal. The original crate had weird rules around putting extra double quotes."
+repository = "https://github.com/oflatt/symbolic-expressions"
+keywords = ["sexp", "s-exp", "symbolic"]
+documentation = "https://docs.rs/generic_symbolic_expressions"
 categories = ["text-processing", "parsing", "encoding"]
 
 [badges]
-travis-ci = { repository = "productize/symbolic-expressions" }
+travis-ci = { repository = "oflatt/symbolic-expressions" }
