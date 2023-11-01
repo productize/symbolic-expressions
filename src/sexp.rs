@@ -345,7 +345,11 @@ impl Sexp {
         if let Sexp::List(children) = self {
             for child in children {
                 match child {
-                    Sexp::List(_) => break,
+                    Sexp::List(l) => {
+                        if l.len() == 1 {
+                            res += 1;
+                        }
+                    }
                     _ => res += 1,
                 }
             }

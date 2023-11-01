@@ -62,11 +62,7 @@ fn test_empty_qstring() {
 
 #[test]
 fn test_pretty() {
-    check_pretty(
-        "(hello (world))",
-        "(hello
-  (world))",
-    )
+    check_pretty("(hello (world))", "(hello (world))")
 }
 
 #[test]
@@ -198,6 +194,17 @@ fn test_pretty_nice() {
         "(define hello
   (add 2
     (add 3 4)))",
+    )
+}
+
+#[test]
+fn test_larger() {
+    check_pretty(
+        "(let ((a 1) (b 2)) (add a b))",
+        "(let
+  ((a 1)
+    (b 2))
+  (add a b))",
     )
 }
 
