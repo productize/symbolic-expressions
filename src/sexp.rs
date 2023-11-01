@@ -1,5 +1,6 @@
 // (c) 2016-2017 Productize SPRL <joost@productize.be>
 
+use std::cmp::max;
 use std::fmt;
 use std::mem;
 
@@ -338,44 +339,80 @@ impl Sexp {
         Ok(&v[1..])
     }
 
+    fn how_many_childen_inline(&self) -> usize {
+        let minimum = 1;
+        let mut res = 0;
+        if let Sexp::List(children) = self {
+            for child in children {
+                match child {
+                    Sexp::List(_) => break,
+                    _ => res += 1,
+                }
+            }
+        }
+
+        max(minimum, res)
+    }
+
+    /// Produces a pretty-printed s-expression
     pub fn pretty(&self) -> String {
-        let mut s = String::new();
         // use a stack so we don't run out of stack space
         // level, s-exp, and if we have already recurred
         let mut stack = vec![(0, self, false)];
         let mut return_stack = vec![];
 
-        while stack.len() > 0 {
-            let (level, current, has_recur) = stack.pop().unwrap();
+        let get_spacing = |level: usize| -> String {
+            let mut res = String::new();
+            for _ in 0..level {
+                res.push_str("  ");
+            }
+            res
+        };
+
+        while let Some((start_level, current, has_recur)) = stack.pop() {
             if !has_recur {
-                stack.push((level, current, true));
+                stack.push((start_level, current, true));
                 match current {
                     Sexp::Symbol(_) => (),
                     Sexp::String(_) => (),
                     Sexp::List(lists) => {
-                        for l in lists.iter().rev() {
-                            stack.push((level + 1, l, false));
+                        let how_many_inline = current.how_many_childen_inline();
+                        for (i, l) in lists.iter().enumerate() {
+                            let new_level = if i < how_many_inline {
+                                0
+                            } else {
+                                start_level + 1
+                            };
+                            stack.push((new_level, l, false))
                         }
                     }
                     Sexp::Empty => (),
                 }
             } else {
                 match current {
-                    Sexp::String(_) => return_stack.push(format!("\"{}\"", current)),
-                    Sexp::Symbol(_) => return_stack.push(format!("{}", current)),
+                    Sexp::String(_) => {
+                        return_stack.push(format!("{}\"{}\"", get_spacing(start_level), current))
+                    }
+                    Sexp::Symbol(_) => {
+                        return_stack.push(format!("{}{}", get_spacing(start_level), current))
+                    }
                     Sexp::List(children) => {
                         let mut res = String::new();
-                        for _ in 0..level {
-                            res.push_str("  ");
-                        }
-                        res.push_str("(");
-                        for (i, child) in children.iter().enumerate() {
-                            if i > 0 {
-                                res.push_str(" ");
+                        res.push_str(&get_spacing(start_level));
+                        res.push('(');
+
+                        let how_many_inline = current.how_many_childen_inline();
+                        for (i, _child) in children.iter().enumerate() {
+                            match i {
+                                0 => (),
+                                a if a < how_many_inline => res.push(' '),
+                                _ => {
+                                    res.push('\n');
+                                }
                             }
                             res.push_str(&return_stack.pop().unwrap());
                         }
-                        res.push_str(")");
+                        res.push(')');
                         return_stack.push(res);
                     }
                     Sexp::Empty => return_stack.push("".to_string()),

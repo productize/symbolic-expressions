@@ -31,7 +31,7 @@ fn check_parse_rules(s: &str, rules: formatter::Rules) {
 fn check_pretty(s: &str, output: &str) {
     let e = parser::parse_str(s).unwrap();
     let t = e.pretty();
-    assert_eq!(t, output)
+    assert_eq!(t, output, "expected:\n{}\ngot:\n{}", output, t)
 }
 
 fn parse_fail(s: &str) {
@@ -61,8 +61,22 @@ fn test_empty_qstring() {
 }
 
 #[test]
+fn test_pretty() {
+    check_pretty(
+        "(hello (world))",
+        "(hello
+  (world))",
+    )
+}
+
+#[test]
 fn test_minimal() {
     check_parse("()")
+}
+
+#[test]
+fn test_minimal_pretty() {
+    check_pretty("()", "()")
 }
 
 #[test]
@@ -174,6 +188,16 @@ fn test_complex() {
          F.SilkS) (width 0.127)) (fp_line (start 4.5 1.75) (end -4.5 1.75) (layer \
          F.SilkS) (width 0.127)) (fp_line (start -4.5 1.75) (end -4.5 -1.75) (layer \
          F.SilkS) (width 0.127)))",
+    )
+}
+
+#[test]
+fn test_pretty_nice() {
+    check_pretty(
+        "(define hello (add 2 (add 3 4)))",
+        "(define hello
+  (add 2
+    (add 3 4)))",
     )
 }
 
