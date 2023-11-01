@@ -4,9 +4,8 @@ use std::io;
 
 use formatter::*;
 
-use Sexp;
 use error::SexpError;
-use encode_string;
+use Sexp;
 
 struct Serializer<W, F = CompactFormatter> {
     writer: W,
@@ -45,12 +44,13 @@ where
     }
 
     fn serialize_str(&mut self, value: &str) -> Result<(), SexpError> {
-        write!(&mut self.writer, "{}", encode_string(value)).map_err(From::from)
+        write!(&mut self.writer, "\"{}\"", value).map_err(From::from)
     }
 
     fn serialize(&mut self, value: &Sexp) -> Result<(), SexpError> {
         match *value {
             Sexp::String(ref s) => self.serialize_str(s),
+            Sexp::Symbol(ref s) => write!(self.writer, "{}", s).map_err(From::from),
             Sexp::List(ref list) => {
                 let mut first = true;
                 if list.is_empty() {

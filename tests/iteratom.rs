@@ -1,10 +1,10 @@
 // (c) 2017 Productize SPRL <joost@productize.be>
 
-extern crate symbolic_expressions;
+extern crate generic_symbolic_expressions;
 
-use symbolic_expressions::SexpError;
-use symbolic_expressions::iteratom::*;
-use symbolic_expressions::Sexp;
+use generic_symbolic_expressions::iteratom::*;
+use generic_symbolic_expressions::Sexp;
+use generic_symbolic_expressions::SexpError;
 
 struct Qq(i64);
 
@@ -15,10 +15,9 @@ impl FromSexp for Qq {
     }
 }
 
-
 fn test_int() -> Result<(), SexpError> {
     let s = "(a (b c) (d 42))";
-    let s = symbolic_expressions::parser::parse_str(s)?;
+    let s = generic_symbolic_expressions::parser::parse_str(s)?;
     let mut i = IterAtom::new(&s, "a")?;
     let c = i.s_in_list("b")?;
     assert_eq!(&c, "c");

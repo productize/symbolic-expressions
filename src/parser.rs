@@ -1,11 +1,11 @@
 // (c) 2016-2017 Productize SPRL <joost@productize.be>
 
 use error::SexpError;
-use Sexp;
 use parse_error;
-use std::io;
 use std::fs::File;
+use std::io;
 use std::io::prelude::*;
+use Sexp;
 
 #[derive(Default)]
 struct Parser {
@@ -157,7 +157,7 @@ fn parse_bare_string(parser: &mut Parser) -> Result<Sexp, SexpError> {
         s.push(c);
         parser.inc()
     }
-    Ok(Sexp::String(s))
+    Ok(Sexp::Symbol(s))
 }
 
 fn read_file(name: &str) -> Result<String, io::Error> {

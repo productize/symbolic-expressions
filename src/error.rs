@@ -1,10 +1,10 @@
 // (c) 2016-2017 Productize SPRL <joost@productize.be>
 
-use std::string;
-use std::io;
-use std::num;
 use std::error;
 use std::fmt;
+use std::io;
+use std::num;
+use std::string;
 
 /// errors that can happen in this library
 #[derive(Debug)]

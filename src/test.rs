@@ -1,8 +1,8 @@
 // (c) 2016-2017 Productize SPRL <joost@productize.be>
 
-use ser;
 use formatter;
 use parser;
+use ser;
 
 fn check_parse_res(s: &str, o: &str) {
     let e = parser::parse_str(s).unwrap();
@@ -28,6 +28,11 @@ fn check_parse_rules(s: &str, rules: formatter::Rules) {
     assert_eq!(s, t)
 }
 
+fn check_pretty(s: &str, output: &str) {
+    let e = parser::parse_str(s).unwrap();
+    let t = e.pretty();
+    assert_eq!(t, output, "expected:\n{}\ngot:\n{}", output, t)
+}
 
 fn parse_fail(s: &str) {
     parser::parse_str(s).unwrap();
@@ -56,8 +61,18 @@ fn test_empty_qstring() {
 }
 
 #[test]
+fn test_pretty() {
+    check_pretty("(hello (world))", "(hello (world))")
+}
+
+#[test]
 fn test_minimal() {
     check_parse("()")
+}
+
+#[test]
+fn test_minimal_pretty() {
+    check_pretty("()", "()")
 }
 
 #[test]
@@ -67,7 +82,7 @@ fn test_string() {
 
 #[test]
 fn test_qstring_a() {
-    check_parse_res("\"hello\"", "hello")
+    check_parse_res("\"hello\"", "\"hello\"")
 }
 
 #[test]
@@ -102,7 +117,7 @@ fn test_br_string() {
 
 #[test]
 fn test_br_qstring() {
-    check_parse_res("(\"world\")", "(world)")
+    check_parse_res("(\"world\")", "(\"world\")")
 }
 
 #[test]
@@ -169,6 +184,27 @@ fn test_complex() {
          F.SilkS) (width 0.127)) (fp_line (start 4.5 1.75) (end -4.5 1.75) (layer \
          F.SilkS) (width 0.127)) (fp_line (start -4.5 1.75) (end -4.5 -1.75) (layer \
          F.SilkS) (width 0.127)))",
+    )
+}
+
+#[test]
+fn test_pretty_nice() {
+    check_pretty(
+        "(define hello (add 2 (add 3 4)))",
+        "(define hello
+  (add 2
+    (add 3 4)))",
+    )
+}
+
+#[test]
+fn test_larger() {
+    check_pretty(
+        "(let ((a 1) (b 2)) (add a b))",
+        "(let
+  ((a 1)
+    (b 2))
+  (add a b))",
     )
 }
 
