@@ -1,8 +1,8 @@
 // (c) 2016-2017 Productize SPRL <joost@productize.be>
 
-use ser;
 use formatter;
 use parser;
+use ser;
 
 fn check_parse_res(s: &str, o: &str) {
     let e = parser::parse_str(s).unwrap();
@@ -28,6 +28,11 @@ fn check_parse_rules(s: &str, rules: formatter::Rules) {
     assert_eq!(s, t)
 }
 
+fn check_pretty(s: &str, output: &str) {
+    let e = parser::parse_str(s).unwrap();
+    let t = e.pretty();
+    assert_eq!(t, output)
+}
 
 fn parse_fail(s: &str) {
     parser::parse_str(s).unwrap();
@@ -67,7 +72,7 @@ fn test_string() {
 
 #[test]
 fn test_qstring_a() {
-    check_parse_res("\"hello\"", "hello")
+    check_parse_res("\"hello\"", "\"hello\"")
 }
 
 #[test]
@@ -102,7 +107,7 @@ fn test_br_string() {
 
 #[test]
 fn test_br_qstring() {
-    check_parse_res("(\"world\")", "(world)")
+    check_parse_res("(\"world\")", "(\"world\")")
 }
 
 #[test]

@@ -18,31 +18,31 @@ impl Into<Sexp> for Vec<Sexp> {
 
 impl Into<Sexp> for String {
     fn into(self: String) -> Sexp {
-        Sexp::String(self)
+        Sexp::Symbol(self)
     }
 }
 
 impl<'a> From<&'a str> for Sexp {
     fn from(t: &str) -> Sexp {
-        Sexp::String(t.into())
+        Sexp::Symbol(t.into())
     }
 }
 
 impl<'a> From<&'a String> for Sexp {
     fn from(t: &String) -> Sexp {
-        Sexp::String(t.clone())
+        Sexp::Symbol(t.clone())
     }
 }
 
 impl Into<Sexp> for i64 {
     fn into(self: i64) -> Sexp {
-        Sexp::String(format!("{}", self))
+        Sexp::Symbol(format!("{}", self))
     }
 }
 
 impl Into<Sexp> for f64 {
     fn into(self: f64) -> Sexp {
-        Sexp::String(format!("{}", self))
+        Sexp::Symbol(format!("{}", self))
     }
 }
 
@@ -69,22 +69,21 @@ impl<'a, T: fmt::Display> From<(&'a str, &'a T)> for Sexp {
 /// a symbolic-expression structure
 /// Can be a string or a list or nothing
 ///
-/// `String` shape: hello
-/// `List` shape: (...)
-/// `Empty shape:
-#[derive(Debug, Clone, PartialEq)]
+/// `String` shape: "hello"
+/// `Symbol` shape: hello
+/// `List`   shape: (...)
+/// `Empty   shape:
+#[derive(Debug, Clone, PartialEq, Default)]
 pub enum Sexp {
-    /// plain String symbolic-expression
+    /// a string
     String(String),
+    /// a symbol
+    Symbol(String),
     /// list symbolic-expression
     List(Vec<Sexp>),
     /// empty, trivial symbolic-expression
+    #[default]
     Empty,
-}
-
-/// !!! oflatt modified this to not add extra quotes
-pub fn encode_string(s: &str) -> String {
-    String::from(s)
 }
 
 impl Sexp {
@@ -112,7 +111,7 @@ impl Sexp {
     /// create an empty list type symbolic-expression
     pub fn start(name: &str) -> Sexp {
         let mut v = vec![];
-        v.push(Sexp::String(name.into()));
+        v.push(Sexp::Symbol(name.into()));
         Sexp::List(v)
     }
 
@@ -185,7 +184,7 @@ impl Sexp {
         let mut e = Sexp::Empty;
         mem::swap(&mut e, self);
         match e {
-            Sexp::String(s) => Ok(s),
+            Sexp::Symbol(s) => Ok(s),
             _ => Err(format!("Not a string: {}", e).into()),
         }
     }
@@ -206,7 +205,7 @@ impl Sexp {
     /// access the symbolic-expression as if it is an `&String`
     pub fn string(&self) -> Result<&String, SexpError> {
         match *self {
-            Sexp::String(ref s) => Ok(s),
+            Sexp::Symbol(ref s) => Ok(s),
             _ => Err(format!("not a string: {}", self).into()),
         }
     }
@@ -214,7 +213,7 @@ impl Sexp {
     /// access the symbolic-expression as if it is a `String`
     pub fn s(&self) -> Result<String, SexpError> {
         match *self {
-            Sexp::String(ref s) => Ok(s.clone()),
+            Sexp::Symbol(ref s) => Ok(s.clone()),
             _ => Err(format!("not a string: {}", self).into()),
         }
     }
@@ -222,7 +221,7 @@ impl Sexp {
     /// is this expression a string
     pub fn is_string(&self) -> bool {
         match *self {
-            Sexp::String(_) => true,
+            Sexp::Symbol(_) => true,
             _ => false,
         }
     }
@@ -328,23 +327,71 @@ impl Sexp {
             return Err(format!("list doesn't start with {}, but with {}", s, st).into());
         };
         if v.len() != (num + 1) {
-            return Err(
-                format!(
-                    "list ({}) doesn't have {} elements but {}",
-                    s,
-                    num,
-                    v.len() - 1
-                ).into(),
-            );
+            return Err(format!(
+                "list ({}) doesn't have {} elements but {}",
+                s,
+                num,
+                v.len() - 1
+            )
+            .into());
         }
         Ok(&v[1..])
+    }
+
+    pub fn pretty(&self) -> String {
+        let mut s = String::new();
+        // use a stack so we don't run out of stack space
+        // level, s-exp, and if we have already recurred
+        let mut stack = vec![(0, self, false)];
+        let mut return_stack = vec![];
+
+        while stack.len() > 0 {
+            let (level, current, has_recur) = stack.pop().unwrap();
+            if !has_recur {
+                stack.push((level, current, true));
+                match current {
+                    Sexp::Symbol(_) => (),
+                    Sexp::String(_) => (),
+                    Sexp::List(lists) => {
+                        for l in lists.iter().rev() {
+                            stack.push((level + 1, l, false));
+                        }
+                    }
+                    Sexp::Empty => (),
+                }
+            } else {
+                match current {
+                    Sexp::String(_) => return_stack.push(format!("\"{}\"", current)),
+                    Sexp::Symbol(_) => return_stack.push(format!("{}", current)),
+                    Sexp::List(children) => {
+                        let mut res = String::new();
+                        for _ in 0..level {
+                            res.push_str("  ");
+                        }
+                        res.push_str("(");
+                        for (i, child) in children.iter().enumerate() {
+                            if i > 0 {
+                                res.push_str(" ");
+                            }
+                            res.push_str(&return_stack.pop().unwrap());
+                        }
+                        res.push_str(")");
+                        return_stack.push(res);
+                    }
+                    Sexp::Empty => return_stack.push("".to_string()),
+                }
+            }
+        }
+
+        return_stack.pop().unwrap()
     }
 }
 
 impl fmt::Display for Sexp {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         match *self {
-            Sexp::String(ref s) => write!(f, "{}", encode_string(s)),
+            Sexp::String(ref s) => write!(f, "\"{}\"", s),
+            Sexp::Symbol(ref s) => write!(f, "{}", s),
             Sexp::List(ref v) => {
                 write!(f, "(")?;
                 let l = v.len();
@@ -359,11 +406,5 @@ impl fmt::Display for Sexp {
             }
             Sexp::Empty => Ok(()),
         }
-    }
-}
-
-impl Default for Sexp {
-    fn default() -> Sexp {
-        Sexp::Empty
     }
 }

@@ -1,7 +1,7 @@
 // (c) 2016 Productize SPRL <joost@productize.be>
 
-use std::io;
 use std::collections::HashMap;
+use std::io;
 
 use error::SexpError;
 use Sexp;
@@ -82,7 +82,7 @@ impl Formatter for RulesFormatter {
     {
         // if first element is string and it has an indent setting
         if let Some(sexp) = value {
-            if let Sexp::String(ref s) = *sexp {
+            if let Sexp::Symbol(ref s) = *sexp {
                 let s: &str = s;
                 if let Some(&i) = self.indent_before.get(s) {
                     writer.write_all(b"\n")?;
@@ -103,7 +103,7 @@ impl Formatter for RulesFormatter {
         // don't put the space
         if let Sexp::List(ref l) = *value {
             if !l.is_empty() {
-                if let Sexp::String(ref s) = l[0] {
+                if let Sexp::Symbol(ref s) = l[0] {
                     let s: &str = s; // why needed?
                     if self.indent_before.contains_key(s) {
                         return Ok(());
